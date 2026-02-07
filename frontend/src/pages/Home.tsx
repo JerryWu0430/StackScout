@@ -34,7 +34,7 @@ export default function Home() {
       const response = await fetch('/api/repos/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: trimmedUrl }),
+        body: JSON.stringify({ github_url: trimmedUrl }),
       })
 
       if (!response.ok) {
