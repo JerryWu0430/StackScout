@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import repos
+from routers import repos, tools
 
 app = FastAPI(title="StackScout API")
+
+app.include_router(tools.router)
 
 app.add_middleware(
     CORSMiddleware,
