@@ -1,0 +1,764 @@
+{
+  "tools": [
+    {
+      "name": "Stripe",
+      "category": "Payments",
+      "description": "Payment processing platform for internet businesses. Provides APIs for payment acceptance, subscription billing, and financial services.",
+      "url": "https://stripe.com",
+      "booking_url": "https://stripe.com/contact/sales",
+      "tags": ["payments", "fintech", "api", "subscriptions", "billing"]
+    },
+    {
+      "name": "Datadog",
+      "category": "Monitoring",
+      "description": "Cloud-scale monitoring and security platform. Provides infrastructure monitoring, APM, log management, and real-time alerting.",
+      "url": "https://www.datadoghq.com",
+      "booking_url": "https://www.datadoghq.com/demo/",
+      "tags": ["monitoring", "observability", "apm", "logs", "metrics"]
+    },
+    {
+      "name": "Auth0",
+      "category": "Auth",
+      "description": "Identity platform for application builders. Provides authentication, authorization, and secure access for applications.",
+      "url": "https://auth0.com",
+      "booking_url": "https://auth0.com/contact-sales",
+      "tags": ["authentication", "identity", "sso", "oauth", "security"]
+    },
+    {
+      "name": "Supabase",
+      "category": "Database",
+      "description": "Open-source Firebase alternative with Postgres database, authentication, storage, and real-time subscriptions.",
+      "url": "https://supabase.com",
+      "booking_url": "https://supabase.com/contact/enterprise",
+      "tags": ["database", "postgres", "backend", "realtime", "auth"]
+    },
+    {
+      "name": "Vercel",
+      "category": "Infrastructure",
+      "description": "Frontend cloud platform for deploying web applications. Provides serverless functions, edge computing, and seamless CI/CD.",
+      "url": "https://vercel.com",
+      "booking_url": "https://vercel.com/contact/sales",
+      "tags": ["deployment", "serverless", "edge", "frontend", "ci-cd"]
+    },
+    {
+      "name": "PlanetScale",
+      "category": "Database",
+      "description": "Serverless MySQL-compatible database platform with branching, non-blocking schema changes, and unlimited scale.",
+      "url": "https://planetscale.com",
+      "booking_url": "https://planetscale.com/contact",
+      "tags": ["database", "mysql", "serverless", "scaling", "branching"]
+    },
+    {
+      "name": "Sentry",
+      "category": "Monitoring",
+      "description": "Application monitoring and error tracking platform. Provides real-time crash reporting, performance monitoring, and debugging tools.",
+      "url": "https://sentry.io",
+      "booking_url": "https://sentry.io/demo/",
+      "tags": ["error-tracking", "monitoring", "debugging", "performance", "observability"]
+    },
+    {
+      "name": "LaunchDarkly",
+      "category": "DevOps",
+      "description": "Feature management platform for controlling feature releases. Enables progressive rollouts, A/B testing, and kill switches.",
+      "url": "https://launchdarkly.com",
+      "booking_url": "https://launchdarkly.com/demo/",
+      "tags": ["feature-flags", "devops", "release-management", "testing", "experimentation"]
+    },
+    {
+      "name": "Twilio",
+      "category": "Communications",
+      "description": "Cloud communications platform providing APIs for SMS, voice, video, and email communications.",
+      "url": "https://www.twilio.com",
+      "booking_url": "https://www.twilio.com/help/sales",
+      "tags": ["sms", "voice", "communications", "api", "messaging"]
+    },
+    {
+      "name": "Segment",
+      "category": "Analytics",
+      "description": "Customer data platform for collecting, cleaning, and routing user data to analytics and marketing tools.",
+      "url": "https://segment.com",
+      "booking_url": "https://segment.com/demo/",
+      "tags": ["analytics", "data", "cdp", "integrations", "tracking"]
+    },
+    {
+      "name": "Algolia",
+      "category": "Search",
+      "description": "Search and discovery platform providing fast, relevant search experiences with AI-powered ranking.",
+      "url": "https://www.algolia.com",
+      "booking_url": "https://www.algolia.com/demorequest/",
+      "tags": ["search", "ai", "discovery", "api", "indexing"]
+    },
+    {
+      "name": "Cloudflare",
+      "category": "Infrastructure",
+      "description": "Web infrastructure and security company providing CDN, DDoS protection, DNS, and edge computing.",
+      "url": "https://www.cloudflare.com",
+      "booking_url": "https://www.cloudflare.com/plans/enterprise/contact/",
+      "tags": ["cdn", "security", "dns", "edge", "performance"]
+    },
+    {
+      "name": "Redis Cloud",
+      "category": "Database",
+      "description": "Managed Redis service for caching, session management, and real-time data processing.",
+      "url": "https://redis.com",
+      "booking_url": "https://redis.com/company/contact/",
+      "tags": ["cache", "redis", "database", "realtime", "performance"]
+    },
+    {
+      "name": "Mixpanel",
+      "category": "Analytics",
+      "description": "Product analytics platform for tracking user behavior, measuring engagement, and building data-driven products.",
+      "url": "https://mixpanel.com",
+      "booking_url": "https://mixpanel.com/contact-us/sales/",
+      "tags": ["analytics", "product", "tracking", "engagement", "metrics"]
+    },
+    {
+      "name": "CircleCI",
+      "category": "CI/CD",
+      "description": "Continuous integration and delivery platform for automating software builds, tests, and deployments.",
+      "url": "https://circleci.com",
+      "booking_url": "https://circleci.com/contact/",
+      "tags": ["ci-cd", "automation", "testing", "deployment", "devops"]
+    },
+    {
+      "name": "GitHub Actions",
+      "category": "CI/CD",
+      "description": "Workflow automation platform built into GitHub for CI/CD, testing, and deployment pipelines.",
+      "url": "https://github.com/features/actions",
+      "booking_url": "https://github.com/enterprise/contact",
+      "tags": ["ci-cd", "automation", "github", "workflows", "devops"]
+    },
+    {
+      "name": "Postman",
+      "category": "API Tools",
+      "description": "API platform for building, testing, documenting, and monitoring APIs throughout the development lifecycle.",
+      "url": "https://www.postman.com",
+      "booking_url": "https://www.postman.com/company/contact-sales/",
+      "tags": ["api", "testing", "documentation", "collaboration", "development"]
+    },
+    {
+      "name": "Clerk",
+      "category": "Auth",
+      "description": "Complete user management platform with authentication, user profiles, and organization management for modern apps.",
+      "url": "https://clerk.com",
+      "booking_url": "https://clerk.com/contact/sales",
+      "tags": ["authentication", "users", "identity", "security", "frontend"]
+    },
+    {
+      "name": "Neon",
+      "category": "Database",
+      "description": "Serverless Postgres with autoscaling, branching, and bottomless storage for modern applications.",
+      "url": "https://neon.tech",
+      "booking_url": "https://neon.tech/contact-sales",
+      "tags": ["postgres", "serverless", "database", "scaling", "branching"]
+    },
+    {
+      "name": "Railway",
+      "category": "Infrastructure",
+      "description": "Infrastructure platform for deploying apps, databases, and services with instant rollouts and autoscaling.",
+      "url": "https://railway.app",
+      "booking_url": "https://railway.app/contact",
+      "tags": ["deployment", "infrastructure", "hosting", "databases", "devops"]
+    },
+    {
+      "name": "Render",
+      "category": "Infrastructure",
+      "description": "Unified cloud to build and run apps and websites with free TLS, global CDN, and auto-deploys from Git.",
+      "url": "https://render.com",
+      "booking_url": "https://render.com/contact",
+      "tags": ["hosting", "deployment", "serverless", "databases", "infrastructure"]
+    },
+    {
+      "name": "Fly.io",
+      "category": "Infrastructure",
+      "description": "Platform for running full-stack apps globally with edge computing and distributed databases.",
+      "url": "https://fly.io",
+      "booking_url": "https://fly.io/sales/",
+      "tags": ["edge", "deployment", "global", "infrastructure", "containers"]
+    },
+    {
+      "name": "Resend",
+      "category": "Communications",
+      "description": "Email API for developers with React Email support, analytics, and deliverability optimization.",
+      "url": "https://resend.com",
+      "booking_url": "https://resend.com/contact",
+      "tags": ["email", "api", "communications", "transactional", "developers"]
+    },
+    {
+      "name": "Inngest",
+      "category": "DevOps",
+      "description": "Event-driven queue for reliable background jobs, workflows, and scheduled tasks with built-in retries.",
+      "url": "https://inngest.com",
+      "booking_url": "https://inngest.com/contact",
+      "tags": ["queues", "events", "background-jobs", "workflows", "serverless"]
+    },
+    {
+      "name": "Upstash",
+      "category": "Database",
+      "description": "Serverless data platform with Redis, Kafka, and QStash for edge and serverless applications.",
+      "url": "https://upstash.com",
+      "booking_url": "https://upstash.com/contact",
+      "tags": ["redis", "kafka", "serverless", "edge", "queues"]
+    },
+    {
+      "name": "Temporal",
+      "category": "DevOps",
+      "description": "Open-source durable execution platform for building reliable distributed applications and workflows.",
+      "url": "https://temporal.io",
+      "booking_url": "https://temporal.io/contact",
+      "tags": ["workflows", "microservices", "reliability", "distributed", "orchestration"]
+    },
+    {
+      "name": "Grafana",
+      "category": "Monitoring",
+      "description": "Open-source observability platform for metrics visualization, log analysis, and distributed tracing.",
+      "url": "https://grafana.com",
+      "booking_url": "https://grafana.com/contact/",
+      "tags": ["monitoring", "visualization", "metrics", "logs", "observability"]
+    },
+    {
+      "name": "New Relic",
+      "category": "Monitoring",
+      "description": "Full-stack observability platform with APM, infrastructure monitoring, logs, and real-time analytics.",
+      "url": "https://newrelic.com",
+      "booking_url": "https://newrelic.com/request-demo",
+      "tags": ["apm", "monitoring", "observability", "logs", "performance"]
+    },
+    {
+      "name": "Lightstep",
+      "category": "Monitoring",
+      "description": "Observability platform for distributed systems with tracing, metrics correlation, and incident response.",
+      "url": "https://lightstep.com",
+      "booking_url": "https://lightstep.com/demo",
+      "tags": ["tracing", "observability", "distributed", "monitoring", "apm"]
+    },
+    {
+      "name": "Honeycomb",
+      "category": "Monitoring",
+      "description": "Observability platform for debugging complex systems with high-cardinality data exploration.",
+      "url": "https://www.honeycomb.io",
+      "booking_url": "https://www.honeycomb.io/demo/",
+      "tags": ["observability", "debugging", "tracing", "monitoring", "analysis"]
+    },
+    {
+      "name": "Snyk",
+      "category": "Security",
+      "description": "Developer security platform for finding and fixing vulnerabilities in code, dependencies, and containers.",
+      "url": "https://snyk.io",
+      "booking_url": "https://snyk.io/contact-sales/",
+      "tags": ["security", "vulnerabilities", "devsecops", "scanning", "dependencies"]
+    },
+    {
+      "name": "SonarQube",
+      "category": "Security",
+      "description": "Code quality and security platform for continuous inspection of code to detect bugs and vulnerabilities.",
+      "url": "https://www.sonarsource.com",
+      "booking_url": "https://www.sonarsource.com/company/contact/sales/",
+      "tags": ["code-quality", "security", "static-analysis", "bugs", "vulnerabilities"]
+    },
+    {
+      "name": "Linear",
+      "category": "Project Management",
+      "description": "Issue tracking and project management tool built for modern software teams with keyboard-first design.",
+      "url": "https://linear.app",
+      "booking_url": "https://linear.app/contact",
+      "tags": ["project-management", "issues", "agile", "collaboration", "productivity"]
+    },
+    {
+      "name": "Notion",
+      "category": "Project Management",
+      "description": "All-in-one workspace for notes, docs, wikis, and project management with powerful database features.",
+      "url": "https://www.notion.so",
+      "booking_url": "https://www.notion.so/contact-sales",
+      "tags": ["documentation", "wiki", "project-management", "collaboration", "notes"]
+    },
+    {
+      "name": "Retool",
+      "category": "Internal Tools",
+      "description": "Low-code platform for building internal tools with drag-and-drop components and database integrations.",
+      "url": "https://retool.com",
+      "booking_url": "https://retool.com/contact-sales",
+      "tags": ["internal-tools", "low-code", "admin", "dashboards", "automation"]
+    },
+    {
+      "name": "Appsmith",
+      "category": "Internal Tools",
+      "description": "Open-source platform for building internal applications with pre-built widgets and database connectors.",
+      "url": "https://www.appsmith.com",
+      "booking_url": "https://www.appsmith.com/demo",
+      "tags": ["internal-tools", "open-source", "low-code", "dashboards", "apps"]
+    },
+    {
+      "name": "Amplitude",
+      "category": "Analytics",
+      "description": "Product analytics platform for understanding user behavior with cohort analysis and experimentation.",
+      "url": "https://amplitude.com",
+      "booking_url": "https://amplitude.com/contact",
+      "tags": ["analytics", "product", "experimentation", "cohorts", "tracking"]
+    },
+    {
+      "name": "PostHog",
+      "category": "Analytics",
+      "description": "Open-source product analytics with session recordings, feature flags, A/B testing, and surveys.",
+      "url": "https://posthog.com",
+      "booking_url": "https://posthog.com/talk-to-us",
+      "tags": ["analytics", "product", "open-source", "feature-flags", "recordings"]
+    },
+    {
+      "name": "Heap",
+      "category": "Analytics",
+      "description": "Digital insights platform with autocapture analytics, session replay, and customer journey analysis.",
+      "url": "https://heap.io",
+      "booking_url": "https://heap.io/demo",
+      "tags": ["analytics", "autocapture", "sessions", "product", "tracking"]
+    },
+    {
+      "name": "Plaid",
+      "category": "Fintech",
+      "description": "Financial services API for connecting bank accounts, enabling payments, and verifying identities.",
+      "url": "https://plaid.com",
+      "booking_url": "https://plaid.com/contact/",
+      "tags": ["fintech", "banking", "payments", "api", "identity"]
+    },
+    {
+      "name": "Brex",
+      "category": "Fintech",
+      "description": "Corporate card and spend management platform for startups with automated expense management.",
+      "url": "https://www.brex.com",
+      "booking_url": "https://www.brex.com/sales",
+      "tags": ["fintech", "corporate-card", "expenses", "payments", "startups"]
+    },
+    {
+      "name": "Mercury",
+      "category": "Fintech",
+      "description": "Banking for startups with checking, savings, and treasury products designed for founders.",
+      "url": "https://mercury.com",
+      "booking_url": "https://mercury.com/contact",
+      "tags": ["banking", "fintech", "startups", "treasury", "payments"]
+    },
+    {
+      "name": "Contentful",
+      "category": "CMS",
+      "description": "Headless CMS platform for managing content across websites, mobile apps, and digital products.",
+      "url": "https://www.contentful.com",
+      "booking_url": "https://www.contentful.com/contact/sales/",
+      "tags": ["cms", "headless", "content", "api", "management"]
+    },
+    {
+      "name": "Sanity",
+      "category": "CMS",
+      "description": "Composable content platform with real-time collaboration and customizable content studio.",
+      "url": "https://www.sanity.io",
+      "booking_url": "https://www.sanity.io/contact/sales",
+      "tags": ["cms", "headless", "content", "collaboration", "api"]
+    },
+    {
+      "name": "Strapi",
+      "category": "CMS",
+      "description": "Open-source headless CMS with customizable APIs and a flexible admin panel.",
+      "url": "https://strapi.io",
+      "booking_url": "https://strapi.io/contact-sales",
+      "tags": ["cms", "headless", "open-source", "api", "content"]
+    },
+    {
+      "name": "Airtable",
+      "category": "Database",
+      "description": "Low-code platform combining spreadsheets and databases for building collaborative apps.",
+      "url": "https://www.airtable.com",
+      "booking_url": "https://www.airtable.com/contact-sales",
+      "tags": ["database", "low-code", "spreadsheet", "collaboration", "apps"]
+    },
+    {
+      "name": "Hasura",
+      "category": "Database",
+      "description": "Instant GraphQL APIs on your data with authorization, event triggers, and remote schemas.",
+      "url": "https://hasura.io",
+      "booking_url": "https://hasura.io/contact-us/",
+      "tags": ["graphql", "api", "database", "realtime", "backend"]
+    },
+    {
+      "name": "Prisma",
+      "category": "Database",
+      "description": "Next-generation ORM for Node.js and TypeScript with type-safe database access and migrations.",
+      "url": "https://www.prisma.io",
+      "booking_url": "https://www.prisma.io/contact",
+      "tags": ["orm", "database", "typescript", "migrations", "backend"]
+    },
+    {
+      "name": "Turso",
+      "category": "Database",
+      "description": "Edge-native SQLite database with global replication and low-latency reads everywhere.",
+      "url": "https://turso.tech",
+      "booking_url": "https://turso.tech/contact",
+      "tags": ["sqlite", "edge", "database", "distributed", "serverless"]
+    },
+    {
+      "name": "CockroachDB",
+      "category": "Database",
+      "description": "Distributed SQL database with global consistency, automatic failover, and horizontal scaling.",
+      "url": "https://www.cockroachlabs.com",
+      "booking_url": "https://www.cockroachlabs.com/contact-sales/",
+      "tags": ["database", "distributed", "sql", "scaling", "resilience"]
+    },
+    {
+      "name": "MongoDB Atlas",
+      "category": "Database",
+      "description": "Multi-cloud developer data platform with document database, search, and vector capabilities.",
+      "url": "https://www.mongodb.com",
+      "booking_url": "https://www.mongodb.com/contact",
+      "tags": ["database", "nosql", "document", "cloud", "atlas"]
+    },
+    {
+      "name": "Pinecone",
+      "category": "AI/ML",
+      "description": "Vector database for AI applications with similarity search, filtering, and real-time updates.",
+      "url": "https://www.pinecone.io",
+      "booking_url": "https://www.pinecone.io/contact/",
+      "tags": ["vector", "ai", "embeddings", "search", "ml"]
+    },
+    {
+      "name": "Weaviate",
+      "category": "AI/ML",
+      "description": "Open-source vector database for AI-native applications with hybrid search capabilities.",
+      "url": "https://weaviate.io",
+      "booking_url": "https://weaviate.io/contact",
+      "tags": ["vector", "ai", "open-source", "search", "embeddings"]
+    },
+    {
+      "name": "OpenAI",
+      "category": "AI/ML",
+      "description": "AI research lab providing GPT models, embeddings, and AI APIs for building intelligent applications.",
+      "url": "https://openai.com",
+      "booking_url": "https://openai.com/contact-sales/",
+      "tags": ["ai", "gpt", "llm", "api", "ml"]
+    },
+    {
+      "name": "Anthropic",
+      "category": "AI/ML",
+      "description": "AI safety company building Claude, a helpful, harmless, and honest AI assistant.",
+      "url": "https://www.anthropic.com",
+      "booking_url": "https://www.anthropic.com/contact",
+      "tags": ["ai", "llm", "claude", "safety", "api"]
+    },
+    {
+      "name": "Replicate",
+      "category": "AI/ML",
+      "description": "Platform for running machine learning models in the cloud with simple API access.",
+      "url": "https://replicate.com",
+      "booking_url": "https://replicate.com/contact",
+      "tags": ["ai", "ml", "models", "api", "inference"]
+    },
+    {
+      "name": "Hugging Face",
+      "category": "AI/ML",
+      "description": "Platform for machine learning with model hub, datasets, and inference APIs.",
+      "url": "https://huggingface.co",
+      "booking_url": "https://huggingface.co/contact",
+      "tags": ["ai", "ml", "models", "transformers", "nlp"]
+    },
+    {
+      "name": "ElevenLabs",
+      "category": "AI/ML",
+      "description": "AI voice synthesis platform for creating realistic speech and voice cloning.",
+      "url": "https://elevenlabs.io",
+      "booking_url": "https://elevenlabs.io/contact",
+      "tags": ["ai", "voice", "tts", "speech", "audio"]
+    },
+    {
+      "name": "Cohere",
+      "category": "AI/ML",
+      "description": "Enterprise AI platform with language models for search, generation, and classification.",
+      "url": "https://cohere.ai",
+      "booking_url": "https://cohere.ai/contact-sales",
+      "tags": ["ai", "llm", "enterprise", "nlp", "api"]
+    },
+    {
+      "name": "LangChain",
+      "category": "AI/ML",
+      "description": "Framework for building applications with LLMs including chains, agents, and retrieval.",
+      "url": "https://langchain.com",
+      "booking_url": "https://langchain.com/contact",
+      "tags": ["ai", "llm", "framework", "agents", "rag"]
+    },
+    {
+      "name": "Weights & Biases",
+      "category": "AI/ML",
+      "description": "ML ops platform for experiment tracking, model management, and collaborative ML development.",
+      "url": "https://wandb.ai",
+      "booking_url": "https://wandb.ai/site/contact",
+      "tags": ["ml-ops", "tracking", "experiments", "models", "ai"]
+    },
+    {
+      "name": "Buildkite",
+      "category": "CI/CD",
+      "description": "CI/CD platform for running fast, secure, and scalable pipelines on your own infrastructure.",
+      "url": "https://buildkite.com",
+      "booking_url": "https://buildkite.com/contact",
+      "tags": ["ci-cd", "pipelines", "automation", "devops", "builds"]
+    },
+    {
+      "name": "Argo CD",
+      "category": "CI/CD",
+      "description": "Declarative GitOps continuous delivery tool for Kubernetes applications.",
+      "url": "https://argoproj.github.io/cd/",
+      "booking_url": "https://akuity.io/contact",
+      "tags": ["ci-cd", "gitops", "kubernetes", "deployment", "devops"]
+    },
+    {
+      "name": "Terraform Cloud",
+      "category": "Infrastructure",
+      "description": "Infrastructure as code platform for provisioning and managing cloud resources.",
+      "url": "https://www.terraform.io",
+      "booking_url": "https://www.hashicorp.com/contact-sales",
+      "tags": ["iac", "infrastructure", "devops", "cloud", "automation"]
+    },
+    {
+      "name": "Pulumi",
+      "category": "Infrastructure",
+      "description": "Infrastructure as code in programming languages like TypeScript, Python, and Go.",
+      "url": "https://www.pulumi.com",
+      "booking_url": "https://www.pulumi.com/contact/",
+      "tags": ["iac", "infrastructure", "devops", "cloud", "automation"]
+    },
+    {
+      "name": "Doppler",
+      "category": "DevOps",
+      "description": "Secrets management platform for syncing environment variables across teams and environments.",
+      "url": "https://www.doppler.com",
+      "booking_url": "https://www.doppler.com/contact-sales",
+      "tags": ["secrets", "environment", "security", "devops", "configuration"]
+    },
+    {
+      "name": "Vault",
+      "category": "Security",
+      "description": "Secrets management and data protection platform for securing sensitive data.",
+      "url": "https://www.vaultproject.io",
+      "booking_url": "https://www.hashicorp.com/contact-sales",
+      "tags": ["secrets", "security", "encryption", "devops", "compliance"]
+    },
+    {
+      "name": "1Password",
+      "category": "Security",
+      "description": "Password manager and secrets automation for teams with developer-friendly CLI and SDKs.",
+      "url": "https://1password.com",
+      "booking_url": "https://1password.com/contact",
+      "tags": ["passwords", "secrets", "security", "authentication", "teams"]
+    },
+    {
+      "name": "Okta",
+      "category": "Auth",
+      "description": "Enterprise identity and access management with SSO, MFA, and lifecycle management.",
+      "url": "https://www.okta.com",
+      "booking_url": "https://www.okta.com/contact-sales/",
+      "tags": ["identity", "sso", "mfa", "enterprise", "security"]
+    },
+    {
+      "name": "WorkOS",
+      "category": "Auth",
+      "description": "APIs for enterprise features like SSO, directory sync, and audit logs for B2B SaaS.",
+      "url": "https://workos.com",
+      "booking_url": "https://workos.com/contact",
+      "tags": ["enterprise", "sso", "authentication", "b2b", "identity"]
+    },
+    {
+      "name": "Stytch",
+      "category": "Auth",
+      "description": "Authentication platform with passwordless, MFA, and session management APIs.",
+      "url": "https://stytch.com",
+      "booking_url": "https://stytch.com/contact-us",
+      "tags": ["authentication", "passwordless", "mfa", "security", "api"]
+    },
+    {
+      "name": "SendGrid",
+      "category": "Communications",
+      "description": "Email delivery platform for transactional and marketing emails with analytics.",
+      "url": "https://sendgrid.com",
+      "booking_url": "https://sendgrid.com/contact/",
+      "tags": ["email", "transactional", "marketing", "api", "deliverability"]
+    },
+    {
+      "name": "Mailgun",
+      "category": "Communications",
+      "description": "Email API service for sending, receiving, and tracking transactional emails.",
+      "url": "https://www.mailgun.com",
+      "booking_url": "https://www.mailgun.com/contact/sales/",
+      "tags": ["email", "api", "transactional", "deliverability", "tracking"]
+    },
+    {
+      "name": "Knock",
+      "category": "Communications",
+      "description": "Notification infrastructure for in-app, email, SMS, and push notifications.",
+      "url": "https://knock.app",
+      "booking_url": "https://knock.app/contact",
+      "tags": ["notifications", "messaging", "api", "multi-channel", "communications"]
+    },
+    {
+      "name": "Novu",
+      "category": "Communications",
+      "description": "Open-source notification infrastructure with unified API for all channels.",
+      "url": "https://novu.co",
+      "booking_url": "https://novu.co/contact-us/",
+      "tags": ["notifications", "open-source", "api", "multi-channel", "messaging"]
+    },
+    {
+      "name": "Stream",
+      "category": "Communications",
+      "description": "Chat and activity feed APIs for building scalable real-time messaging features.",
+      "url": "https://getstream.io",
+      "booking_url": "https://getstream.io/contact/",
+      "tags": ["chat", "feeds", "realtime", "messaging", "api"]
+    },
+    {
+      "name": "Agora",
+      "category": "Communications",
+      "description": "Real-time engagement platform for voice, video, and interactive live streaming.",
+      "url": "https://www.agora.io",
+      "booking_url": "https://www.agora.io/en/talk-to-us/",
+      "tags": ["video", "voice", "realtime", "streaming", "webrtc"]
+    },
+    {
+      "name": "Liveblocks",
+      "category": "Collaboration",
+      "description": "Real-time collaboration infrastructure for multiplayer experiences like Figma.",
+      "url": "https://liveblocks.io",
+      "booking_url": "https://liveblocks.io/contact",
+      "tags": ["collaboration", "realtime", "multiplayer", "sync", "presence"]
+    },
+    {
+      "name": "Partykit",
+      "category": "Collaboration",
+      "description": "Platform for building real-time collaborative applications with global edge deployment.",
+      "url": "https://partykit.io",
+      "booking_url": "https://partykit.io/contact",
+      "tags": ["realtime", "collaboration", "edge", "multiplayer", "serverless"]
+    },
+    {
+      "name": "Stripe Atlas",
+      "category": "Fintech",
+      "description": "Service for incorporating a company, with banking, payments, and legal infrastructure.",
+      "url": "https://stripe.com/atlas",
+      "booking_url": "https://stripe.com/atlas",
+      "tags": ["incorporation", "startups", "fintech", "legal", "banking"]
+    },
+    {
+      "name": "Paddle",
+      "category": "Payments",
+      "description": "Payment infrastructure for SaaS with subscriptions, tax compliance, and billing.",
+      "url": "https://www.paddle.com",
+      "booking_url": "https://www.paddle.com/contact-sales",
+      "tags": ["payments", "subscriptions", "saas", "billing", "tax"]
+    },
+    {
+      "name": "Chargebee",
+      "category": "Payments",
+      "description": "Subscription billing platform with revenue operations and recurring payment management.",
+      "url": "https://www.chargebee.com",
+      "booking_url": "https://www.chargebee.com/schedule-a-demo/",
+      "tags": ["billing", "subscriptions", "saas", "revenue", "payments"]
+    },
+    {
+      "name": "Lemon Squeezy",
+      "category": "Payments",
+      "description": "Merchant of record for selling digital products with built-in tax compliance.",
+      "url": "https://www.lemonsqueezy.com",
+      "booking_url": "https://www.lemonsqueezy.com/contact",
+      "tags": ["payments", "digital-products", "saas", "tax", "billing"]
+    },
+    {
+      "name": "Flagsmith",
+      "category": "DevOps",
+      "description": "Open-source feature flag and remote config service for managing releases.",
+      "url": "https://www.flagsmith.com",
+      "booking_url": "https://www.flagsmith.com/contact",
+      "tags": ["feature-flags", "open-source", "remote-config", "devops", "releases"]
+    },
+    {
+      "name": "Split",
+      "category": "DevOps",
+      "description": "Feature delivery platform with feature flags, experimentation, and data-driven releases.",
+      "url": "https://www.split.io",
+      "booking_url": "https://www.split.io/contact/",
+      "tags": ["feature-flags", "experimentation", "releases", "devops", "testing"]
+    },
+    {
+      "name": "Statsig",
+      "category": "Analytics",
+      "description": "Modern experimentation platform with feature gates, A/B testing, and analytics.",
+      "url": "https://statsig.com",
+      "booking_url": "https://statsig.com/contact",
+      "tags": ["experimentation", "feature-flags", "analytics", "ab-testing", "product"]
+    },
+    {
+      "name": "Cloudinary",
+      "category": "Media",
+      "description": "Media management platform for image and video optimization, transformation, and delivery.",
+      "url": "https://cloudinary.com",
+      "booking_url": "https://cloudinary.com/contact",
+      "tags": ["media", "images", "video", "cdn", "optimization"]
+    },
+    {
+      "name": "Imgix",
+      "category": "Media",
+      "description": "Real-time image processing and delivery platform with global CDN.",
+      "url": "https://imgix.com",
+      "booking_url": "https://imgix.com/contact",
+      "tags": ["images", "cdn", "optimization", "processing", "media"]
+    },
+    {
+      "name": "Mux",
+      "category": "Media",
+      "description": "Video infrastructure for developers with encoding, streaming, and analytics.",
+      "url": "https://www.mux.com",
+      "booking_url": "https://www.mux.com/contact",
+      "tags": ["video", "streaming", "encoding", "analytics", "api"]
+    },
+    {
+      "name": "Uploadthing",
+      "category": "Media",
+      "description": "File uploads for Next.js and React with type-safe APIs and presigned URLs.",
+      "url": "https://uploadthing.com",
+      "booking_url": "https://uploadthing.com/contact",
+      "tags": ["uploads", "files", "storage", "react", "nextjs"]
+    },
+    {
+      "name": "Tinybird",
+      "category": "Analytics",
+      "description": "Real-time data platform for building analytics APIs at any scale.",
+      "url": "https://www.tinybird.co",
+      "booking_url": "https://www.tinybird.co/contact",
+      "tags": ["analytics", "realtime", "data", "api", "clickhouse"]
+    },
+    {
+      "name": "ClickHouse",
+      "category": "Database",
+      "description": "Open-source columnar database for real-time analytics with lightning-fast queries.",
+      "url": "https://clickhouse.com",
+      "booking_url": "https://clickhouse.com/company/contact",
+      "tags": ["database", "analytics", "columnar", "olap", "realtime"]
+    },
+    {
+      "name": "Dbt",
+      "category": "Data",
+      "description": "Data transformation tool for analytics engineering with version control and testing.",
+      "url": "https://www.getdbt.com",
+      "booking_url": "https://www.getdbt.com/contact/",
+      "tags": ["data", "transformation", "analytics", "sql", "elt"]
+    },
+    {
+      "name": "Fivetran",
+      "category": "Data",
+      "description": "Automated data integration platform for syncing data from sources to warehouses.",
+      "url": "https://www.fivetran.com",
+      "booking_url": "https://www.fivetran.com/demo",
+      "tags": ["data", "etl", "integration", "warehousing", "connectors"]
+    },
+    {
+      "name": "Airbyte",
+      "category": "Data",
+      "description": "Open-source data integration platform with hundreds of connectors for ELT pipelines.",
+      "url": "https://airbyte.com",
+      "booking_url": "https://airbyte.com/talk-to-sales",
+      "tags": ["data", "etl", "open-source", "integration", "connectors"]
+    }
+  ]
+}
