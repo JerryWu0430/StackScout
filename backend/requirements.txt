@@ -3,7 +3,7 @@ uvicorn[standard]>=0.27.0
 pydantic>=2.0.0
 python-dotenv>=1.0.0
 openai
-supabase
+supabase>=2.0.0
 httpx
 google-api-python-client
 elevenlabs
