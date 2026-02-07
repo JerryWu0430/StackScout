@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import VoiceAgent from '../components/VoiceAgent'
 
 interface Tool {
@@ -20,10 +20,7 @@ interface ConversationSummary {
 type CallState = 'idle' | 'connecting' | 'active' | 'ended'
 
 export default function Schedule() {
-  const [searchParams] = useSearchParams()
-  const repoId = searchParams.get('repo_id')
-  const toolId = searchParams.get('tool_id')
-  const repoUrl = searchParams.get('repo')
+  const { repo_id: repoId, tool_id: toolId } = useParams()
 
   const [tool, setTool] = useState<Tool | null>(null)
   const [callState, setCallState] = useState<CallState>('idle')
@@ -172,7 +169,7 @@ export default function Schedule() {
               Schedule Another Call
             </button>
             <Link
-              to={`/tools?repo=${encodeURIComponent(repoUrl || '')}&repo_id=${repoId}`}
+              to={`/tools?repo_id=${repoId}`}
               className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
             >
               Back to Recommendations
@@ -206,9 +203,7 @@ export default function Schedule() {
             <div className="h-6 bg-gray-200 rounded w-1/3 mb-2" />
             <div className="h-4 bg-gray-200 rounded w-2/3" />
           </div>
-        ) : (
-          <p className="text-gray-600 mb-6 truncate">{repoUrl}</p>
-        )}
+        ) : null}
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
@@ -226,7 +221,7 @@ export default function Schedule() {
 
         {/* Back link */}
         <Link
-          to={`/tools?repo=${encodeURIComponent(repoUrl || '')}&repo_id=${repoId || ''}`}
+          to={`/tools?repo_id=${repoId || ''}`}
           className="inline-block mt-6 text-blue-600 hover:text-blue-700 transition"
         >
           ← Back to recommendations
