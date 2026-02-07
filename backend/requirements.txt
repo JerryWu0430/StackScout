@@ -8,4 +8,5 @@ supabase>=2.0.0
 httpx
 google-api-python-client
 google-auth
+google-genai>=1.0.0
 elevenlabs

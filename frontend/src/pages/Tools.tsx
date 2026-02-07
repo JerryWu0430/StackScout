@@ -1,9 +1,9 @@
-import { useSearchParams } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import ToolCard from '../components/ToolCard'
 
 interface Tool {
-  id: number
+  id: string
   name: string
   category: string
   description?: string
@@ -17,39 +17,36 @@ interface Recommendation {
   explanation: string
 }
 
+async function fetchRecommendations(repoId: string): Promise<Recommendation[]> {
+  const response = await fetch(`/api/repos/${repoId}/recommendations`)
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
+    throw new Error(data.detail || 'Failed to fetch recommendations')
+  }
+  return response.json()
+}
+
 export default function Tools() {
-  const [searchParams] = useSearchParams()
-  const repoId = searchParams.get('repo_id')
+  const { repo_id: repoId } = useParams<{ repo_id: string }>()
 
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data: recommendations = [], isLoading, error } = useQuery({
+    queryKey: ['recommendations', repoId],
+    queryFn: () => fetchRecommendations(repoId!),
+    enabled: !!repoId,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  })
 
-  useEffect(() => {
-    if (!repoId) {
-      setError('No repository ID provided')
-      setIsLoading(false)
-      return
-    }
-
-    async function fetchRecommendations() {
-      try {
-        const response = await fetch(`/api/repos/${repoId}/recommendations`)
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}))
-          throw new Error(data.detail || 'Failed to fetch recommendations')
-        }
-        const data = await response.json()
-        setRecommendations(data)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchRecommendations()
-  }, [repoId])
+  if (!repoId) {
+    return (
+      <div className="min-h-screen bg-gray-100 p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-600">No repository ID provided</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -66,7 +63,7 @@ export default function Tools() {
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-600">{error}</p>
+            <p className="text-red-600">{error instanceof Error ? error.message : 'Unknown error'}</p>
           </div>
         )}
 
@@ -85,7 +82,7 @@ export default function Tools() {
                 suitabilityScore={rec.suitability_score}
                 demoPriority={rec.demo_priority}
                 explanation={rec.explanation}
-                repoId={repoId!}
+                repoId={repoId}
               />
             ))}
           </div>

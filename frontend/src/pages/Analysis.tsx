@@ -1,37 +1,29 @@
-import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import StackCard from '../components/StackCard'
 import GapCard from '../components/GapCard'
 import type { RepoResponse, TechStack } from '../types/api'
 
-type LoadingState = 'loading' | 'error' | 'success'
+async function fetchRepo(repoId: string): Promise<RepoResponse> {
+  const response = await fetch(`/api/repos/${repoId}`)
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error(err.detail || 'Failed to load analysis')
+  }
+  return response.json()
+}
 
 export default function Analysis() {
   const { repo_id } = useParams<{ repo_id: string }>()
-  const [state, setState] = useState<LoadingState>('loading')
-  const [data, setData] = useState<RepoResponse | null>(null)
-  const [error, setError] = useState('')
 
-  useEffect(() => {
-    async function fetchRepo() {
-      try {
-        const response = await fetch(`/api/repos/${repo_id}`)
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({}))
-          throw new Error(err.detail || 'Failed to load analysis')
-        }
-        const result: RepoResponse = await response.json()
-        setData(result)
-        setState('success')
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Something went wrong')
-        setState('error')
-      }
-    }
-    fetchRepo()
-  }, [repo_id])
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['repo', repo_id],
+    queryFn: () => fetchRepo(repo_id!),
+    enabled: !!repo_id,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  })
 
-  if (state === 'loading') {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
@@ -45,11 +37,11 @@ export default function Analysis() {
     )
   }
 
-  if (state === 'error') {
+  if (error) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-red-600 mb-4">{error instanceof Error ? error.message : 'Something went wrong'}</p>
           <Link to="/" className="text-blue-600 hover:underline">
             Go back home
           </Link>

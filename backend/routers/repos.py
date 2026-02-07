@@ -13,7 +13,7 @@ class AnalyzeRequest(BaseModel):
 
 
 class AnalyzeResponse(BaseModel):
-    repo_id: int
+    repo_id: str
     fingerprint: RepoFingerprint
 
 
@@ -47,7 +47,7 @@ async def analyze_repository(req: AnalyzeRequest):
 
 
 @router.get("/{repo_id}", response_model=AnalyzeResponse)
-async def get_repo(repo_id: int):
+async def get_repo(repo_id: str):
     """Get saved repo fingerprint by ID."""
     result = supabase.table("repos").select("*").eq("id", repo_id).execute()
 

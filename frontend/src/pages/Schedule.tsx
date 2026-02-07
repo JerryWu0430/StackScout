@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import VoiceAgent from '../components/VoiceAgent'
 
 interface Tool {
-  id: number
+  id: string
   name: string
   description: string
   category: string
@@ -169,7 +169,7 @@ export default function Schedule() {
               Schedule Another Call
             </button>
             <Link
-              to={`/tools?repo_id=${repoId}`}
+              to={`/tools/${repoId}`}
               className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
             >
               Back to Recommendations
@@ -221,7 +221,7 @@ export default function Schedule() {
 
         {/* Back link */}
         <Link
-          to={`/tools?repo_id=${repoId || ''}`}
+          to={`/tools/${repoId}`}
           className="inline-block mt-6 text-blue-600 hover:text-blue-700 transition"
         >
           ← Back to recommendations

@@ -2,7 +2,7 @@
 import os
 import json
 from pydantic import BaseModel, Field
-from openai import OpenAI, RateLimitError
+from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 
@@ -22,8 +22,13 @@ class RepoFingerprint(BaseModel):
 
 
 def _get_client() -> OpenAI:
-    """Get OpenAI client (lazy init)."""
-    return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    """Get OpenAI-compatible client (LiteLLM or OpenAI)."""
+    base_url = os.getenv("LITELLM_BASE_URL")
+    api_key = os.getenv("LITELLM_API_KEY") or os.getenv("OPENAI_API_KEY")
+
+    if base_url:
+        return OpenAI(base_url=base_url, api_key=api_key)
+    return OpenAI(api_key=api_key)
 
 
 ANALYSIS_PROMPT = """Analyze this repository and provide a detailed fingerprint.
@@ -41,7 +46,12 @@ Based on the files, identify:
 4. **Complexity Score**: 1-10 based on project size, tech diversity, architecture complexity
 5. **Recommendations Context**: 2-3 sentence summary of what tools/services would help this project
 
-Be specific about versions and technologies detected. Focus on actionable insights."""
+Be specific about versions and technologies detected. Focus on actionable insights.
+
+Respond with valid JSON matching this schema:
+{schema}
+
+Return ONLY the JSON, no markdown or explanation."""
 
 
 def _format_files_for_prompt(files: dict) -> str:
@@ -62,39 +72,55 @@ def _format_files_for_prompt(files: dict) -> str:
     return "\n\n".join(parts)
 
 
+RESPONSE_SCHEMA = """{
+  "stack": {
+    "frontend": ["list of frontend techs"],
+    "backend": ["list of backend techs"],
+    "database": ["list of database techs"],
+    "infrastructure": ["list of infra techs"]
+  },
+  "gaps": ["list of missing best practices"],
+  "risk_flags": ["list of potential issues"],
+  "complexity_score": 1-10,
+  "recommendations_context": "summary string"
+}"""
+
+
 @retry(
-    retry=retry_if_exception_type(RateLimitError),
+    retry=retry_if_exception_type(Exception),
     wait=wait_exponential(multiplier=1, min=1, max=60),
-    stop=stop_after_attempt(5),
+    stop=stop_after_attempt(3),
 )
 def analyze_repo(repo_files: dict) -> RepoFingerprint:
-    """Analyze repository files and return structured fingerprint.
-
-    Args:
-        repo_files: Dict from github.fetch_repo_files() with keys:
-            - owner: str
-            - repo: str
-            - files: dict[str, str|dict]
-            - languages: dict[str, int]
-
-    Returns:
-        RepoFingerprint with stack analysis, gaps, risks, and recommendations
-    """
+    """Analyze repository files and return structured fingerprint."""
     files = repo_files.get("files", {})
     languages = repo_files.get("languages", {})
 
     prompt = ANALYSIS_PROMPT.format(
         files_content=_format_files_for_prompt(files),
         languages=json.dumps(languages, indent=2),
+        schema=RESPONSE_SCHEMA,
     )
 
-    response = _get_client().beta.chat.completions.parse(
-        model="gpt-4o",
+    client = _get_client()
+    model = os.getenv("LITELLM_MODEL", "gpt-4o")
+
+    response = client.chat.completions.create(
+        model=model,
         messages=[
-            {"role": "system", "content": "You are a senior software architect analyzing repositories."},
+            {"role": "system", "content": "You are a senior software architect analyzing repositories. Always respond with valid JSON only."},
             {"role": "user", "content": prompt},
         ],
-        response_format=RepoFingerprint,
+        temperature=0.1,
     )
 
-    return response.choices[0].message.parsed
+    result_text = response.choices[0].message.content
+    # Strip markdown code blocks if present
+    if result_text.startswith("```"):
+        result_text = result_text.split("```")[1]
+        if result_text.startswith("json"):
+            result_text = result_text[4:]
+    result_text = result_text.strip()
+
+    result = json.loads(result_text)
+    return RepoFingerprint(**result)

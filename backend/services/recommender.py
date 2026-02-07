@@ -9,6 +9,15 @@ from db.models import Tool
 from services.embeddings import get_embedding
 
 
+def _get_client() -> OpenAI:
+    """Get OpenAI-compatible client (LiteLLM or OpenAI)."""
+    base_url = os.getenv("LITELLM_BASE_URL")
+    api_key = os.getenv("LITELLM_API_KEY") or os.getenv("OPENAI_API_KEY")
+    if base_url:
+        return OpenAI(base_url=base_url, api_key=api_key)
+    return OpenAI(api_key=api_key)
+
+
 @dataclass
 class Recommendation:
     tool: Tool
@@ -83,7 +92,8 @@ def _calculate_demo_priority(score: float) -> int:
 
 def _generate_explanation(tool: Tool, gaps: list[str], context: str) -> str:
     """Generate LLM explanation for why this tool is recommended."""
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = _get_client()
+    model = os.getenv("LITELLM_MODEL", "gpt-4o-mini")
 
     prompt = f"""Given a repository with these identified gaps: {', '.join(gaps)}
 And this context: {context}
@@ -95,7 +105,7 @@ Tool tags: {', '.join(tool.tags)}
 Be specific about how it addresses the gaps. Keep it concise."""
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=model,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=100,
         temperature=0.7,
@@ -107,7 +117,8 @@ def _generate_explanations_batch(
     tools: list[Tool], gaps: list[str], context: str
 ) -> list[str]:
     """Generate explanations for multiple tools in batch."""
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = _get_client()
+    model = os.getenv("LITELLM_MODEL", "gpt-4o-mini")
 
     tools_info = "\n".join(
         f"- {t.name} ({t.category}): {t.description}" for t in tools
@@ -125,7 +136,7 @@ Tools:
 Respond in JSON format: {{"explanations": ["explanation1", "explanation2", ...]}}"""
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=model,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=500,
         temperature=0.7,
@@ -190,6 +201,10 @@ def get_recommendations(repo_id: str, limit: int = 5) -> list[Recommendation]:
     for emb_row in embeddings_result.data:
         tool_id = emb_row["tool_id"]
         tool_embedding = emb_row["embedding"]
+
+        # Parse embedding if stored as string
+        if isinstance(tool_embedding, str):
+            tool_embedding = json.loads(tool_embedding)
 
         if tool_id not in tools_by_id:
             continue

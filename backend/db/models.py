@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class Tool(BaseModel):
-    id: int
+    id: str
     name: str
     category: str
     description: Optional[str] = None
@@ -14,20 +14,20 @@ class Tool(BaseModel):
 
 
 class ToolEmbedding(BaseModel):
-    id: int
-    tool_id: int
+    id: str
+    tool_id: str
     embedding: list[float]
 
 
 class Repo(BaseModel):
-    id: int
+    id: str
     github_url: str
     fingerprint: Optional[str] = None
 
 
 class Demo(BaseModel):
-    id: int
-    repo_id: int
-    tool_id: int
+    id: str
+    repo_id: str
+    tool_id: str
     scheduled_at: Optional[datetime] = None
     status: str = "pending"
