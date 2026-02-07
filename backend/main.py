@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers import repos, tools
+from routers.voice import router as voice_router, demos_router
 
 app = FastAPI(title="StackScout API")
 
@@ -16,6 +17,8 @@ app.add_middleware(
 )
 
 app.include_router(repos.router, prefix="/api")
+app.include_router(voice_router)
+app.include_router(demos_router)
 
 
 @app.get("/")
