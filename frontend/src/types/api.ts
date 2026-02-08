@@ -22,6 +22,7 @@ export interface RepoFingerprint {
 
 export interface RepoResponse {
   repo_id: string
+  github_url?: string | null
   fingerprint: RepoFingerprint
 }
 

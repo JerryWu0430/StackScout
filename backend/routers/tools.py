@@ -61,7 +61,7 @@ def get_tool(tool_id: str):
 
 
 @router.get("/repos/{repo_id}/recommendations", response_model=list[RecommendationResponse])
-def get_repo_recommendations(repo_id: str, limit: int = Query(5, ge=1, le=20)):
+def get_repo_recommendations(repo_id: str, limit: int = Query(10, ge=1, le=30)):
     """Get tool recommendations for a repository."""
     try:
         recommendations = get_recommendations(repo_id, limit=limit)

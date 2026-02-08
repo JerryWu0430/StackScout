@@ -49,14 +49,14 @@ export default function GapCard({ description, severity = 'medium' }: GapCardPro
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
-            className={`p-4 rounded-lg border border-l-4 ${config.border} ${config.bg} cursor-default`}
+            className={`p-2.5 rounded border border-l-2 ${config.border} ${config.bg} cursor-default`}
           >
-            <div className="flex items-start gap-3">
-              <Icon className="size-5 shrink-0 mt-0.5 text-foreground/70" />
+            <div className="flex items-start gap-2">
+              <Icon className="size-3.5 shrink-0 mt-0.5 text-foreground/70" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-foreground">{description}</p>
+                <p className="text-xs text-foreground">{description}</p>
               </div>
-              <Badge variant={config.badge} className="shrink-0">
+              <Badge variant={config.badge} className="shrink-0 text-xs">
                 {config.label}
               </Badge>
             </div>

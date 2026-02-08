@@ -48,9 +48,23 @@ Based on the files, identify:
 
 1. **Stack**: Categorize technologies into frontend, backend, database, infrastructure
 
-2. **Gaps**: Missing best practices (CI/CD, testing, monitoring, security, docs, etc.)
+2. **Gaps**: Missing best practices. Check files carefully:
+   - CI/CD: Missing if no .github/workflows/, .gitlab-ci.yml, Jenkinsfile, .circleci/
+   - Testing: Missing if no tests/, __tests__/, spec/, pytest.ini, jest.config, or *_test.* files
+   - Monitoring: Missing if no logging setup, no APM/observability tools configured
+   - Security: Missing if no auth system, no input validation, exposed secrets
+   - Documentation: Missing if README lacks setup instructions, no API docs for APIs
+   - Error handling: Missing if no try/catch, error boundaries, or graceful failures
+   - Type safety: Missing if JS project without TypeScript, Python without type hints
+   Be specific: "No unit tests found" not just "Testing". Most projects have 2-4 gaps.
 
-3. **Risk Flags**: Potential issues (outdated deps, security concerns, missing configs)
+3. **Risk Flags**: Concrete issues you can see in the code:
+   - Outdated deps: Check package.json/requirements.txt versions
+   - Security issues: Hardcoded secrets, SQL injection, XSS, unsafe eval()
+   - Tech debt: Deep nesting, god classes, no separation of concerns
+   - No error handling: Silent failures, missing try/catch in async code
+   - Missing types: Untyped function params in TypeScript, Any overuse
+   Be specific about file/line if possible. Most codebases have 1-3 risks.
 
 4. **Complexity Score**: 1-10 based on project size, tech diversity, architecture complexity
 
@@ -82,7 +96,8 @@ Based on the files, identify:
 9. **Use Cases**: 2-4 specific things this project enables/solves.
    Examples: "process credit card payments", "manage user sessions", "analyze customer data"
 
-Be specific about versions and technologies detected. Focus on actionable insights.
+IMPORTANT: Be balanced - report real issues you see, but verify from files.
+Most projects have 2-4 gaps and 1-3 risks. A truly polished project may have fewer.
 
 Respond with valid JSON matching this schema:
 {schema}

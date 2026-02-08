@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { AlertTriangle, ShieldAlert, Building2, Layers, Tags } from 'lucide-react'
+import { AlertTriangle, ShieldAlert, Building2, Layers } from 'lucide-react'
 import VoiceAgent from '../components/VoiceAgent'
 import TabPanel from '../components/TabPanel'
 import StackCard from '../components/StackCard'
@@ -10,10 +10,10 @@ import GapCard from '../components/GapCard'
 import ToolCard from '../components/ToolCard'
 import CallStatusTab from '../components/CallStatusTab'
 import useAnalysisVoice from '../hooks/useAnalysisVoice'
-import { Card, CardContent } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
+import { GitHubContributors } from '@/components/ui/github-contributors'
 import {
   Accordion,
   AccordionContent,
@@ -21,6 +21,12 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import type { RepoResponse, TechStack, Tool, Recommendation } from '../types/api'
+
+/** Extract "owner/repo" from GitHub URL */
+function extractRepoPath(githubUrl: string): string | null {
+  const match = githubUrl.match(/github\.com\/([^/]+\/[^/]+)/i)
+  return match ? match[1].replace(/\.git$/, '') : null
+}
 
 interface BookingState {
   toolId: string
@@ -118,6 +124,9 @@ export default function AnalysisPage() {
     ...(bookingState ? [{ id: 'call', label: 'Call Status' }] : []),
   ]
 
+  // Must call all hooks before any conditional returns
+  const repoPath = useMemo(() => repoData?.github_url ? extractRepoPath(repoData.github_url) : null, [repoData])
+
   if (repoLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -154,66 +163,14 @@ export default function AnalysisPage() {
       transition={{ duration: 0.3 }}
       className="min-h-screen bg-background"
     >
-      <div className="flex h-screen">
-        {/* Left panel - Voice Agent (~40%) */}
-        <div className="w-2/5 border-r border-border p-6 flex flex-col">
-          <div className="mb-4">
+      <div className="flex h-screen overflow-hidden">
+        {/* Left panel - Tabbed content (~55%) */}
+        <div className="w-[55%] p-4 flex flex-col overflow-y-auto scrollbar-hidden">
+          <div className="mb-3">
             <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
               ← Back to Home
             </Link>
           </div>
-
-          <h1 className="text-2xl font-bold text-foreground mb-2">Stack Analysis</h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            {fingerprint.recommendations_context}
-          </p>
-
-          {/* Project Context Badges */}
-          {(fingerprint.industry || fingerprint.project_type) && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {fingerprint.industry && fingerprint.industry !== 'general' && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <Building2 className="size-3" />
-                  {fingerprint.industry}
-                </Badge>
-              )}
-              {fingerprint.project_type && (
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Layers className="size-3" />
-                  {fingerprint.project_type.replace('_', ' ')}
-                </Badge>
-              )}
-            </div>
-          )}
-
-          {/* Keywords */}
-          {fingerprint.keywords && fingerprint.keywords.length > 0 && (
-            <div className="mb-6">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                <Tags className="size-3" />
-                <span>Keywords</span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {fingerprint.keywords.slice(0, 8).map((kw, i) => (
-                  <Badge key={i} variant="outline" className="text-xs font-normal">
-                    {kw}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <VoiceAgent
-            status={status}
-            isSpeaking={isSpeaking}
-            messages={messages}
-            onStart={startCall}
-            onEnd={endCall}
-          />
-        </div>
-
-        {/* Right panel - Tabbed content (~60%) */}
-        <div className="w-3/5 p-6 overflow-hidden flex flex-col">
           <TabPanel
             tabs={tabs}
             activeTab={activeTab}
@@ -225,25 +182,30 @@ export default function AnalysisPage() {
                 variants={containerVariants}
                 initial="hidden"
                 animate="show"
-                className="space-y-6"
+                className="space-y-3"
               >
-                {/* Complexity Score */}
-                <motion.div variants={itemVariants}>
-                  <Card>
-                    <CardContent>
-                      <h2 className="text-lg font-semibold text-card-foreground mb-3">Complexity Score</h2>
-                      <div className="flex items-center gap-4">
-                        <Progress value={fingerprint.complexity_score * 10} className="flex-1 h-3" />
-                        <span className="text-2xl font-bold text-primary">{fingerprint.complexity_score}/10</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                {/* Keywords + Complexity inline */}
+                <motion.div variants={itemVariants} className="flex items-center justify-between gap-2 flex-wrap">
+                  {fingerprint.keywords && fingerprint.keywords.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {fingerprint.keywords.slice(0, 6).map((kw, i) => (
+                        <Badge key={i} variant="outline" className="text-xs font-normal">
+                          {kw}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Complexity:</span>
+                    <Progress value={fingerprint.complexity_score * 10} className="h-2 w-20" />
+                    <span className="font-semibold text-primary">{fingerprint.complexity_score}/10</span>
+                  </div>
                 </motion.div>
 
                 {/* Stack Categories */}
                 <motion.div variants={itemVariants}>
-                  <h2 className="text-lg font-semibold text-foreground mb-3">Tech Stack</h2>
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <h2 className="text-sm font-semibold text-foreground mb-2">Tech Stack</h2>
+                  <div className="grid gap-2 md:grid-cols-2">
                     {stackCategories.map(([category, technologies]) => (
                       <StackCard key={category} category={category} technologies={technologies} />
                     ))}
@@ -253,66 +215,69 @@ export default function AnalysisPage() {
                 {/* Use Cases */}
                 {fingerprint.use_cases && fingerprint.use_cases.length > 0 && (
                   <motion.div variants={itemVariants}>
-                    <Card>
-                      <CardContent>
-                        <h2 className="text-lg font-semibold text-card-foreground mb-3">Use Cases</h2>
-                        <ul className="space-y-2">
-                          {fingerprint.use_cases.map((uc, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                              <span className="text-primary">•</span>
-                              {uc}
-                            </li>
-                          ))}
-                        </ul>
-                      </CardContent>
-                    </Card>
+                    <h2 className="text-sm font-semibold text-foreground mb-1">Use Cases</h2>
+                    <ul className="space-y-0.5">
+                      {fingerprint.use_cases.map((uc, i) => (
+                        <li key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                          <span className="text-primary">•</span>
+                          {uc}
+                        </li>
+                      ))}
+                    </ul>
                   </motion.div>
                 )}
 
-                {/* Gaps & Risk Flags in Accordion */}
-                <motion.div variants={itemVariants}>
-                  <Accordion type="multiple" defaultValue={['gaps', 'risks']} className="space-y-2">
-                    {/* Gaps */}
-                    {fingerprint.gaps.length > 0 && (
-                      <AccordionItem value="gaps" className="border rounded-lg px-4">
-                        <AccordionTrigger className="hover:no-underline">
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className="size-4 text-warning" />
-                            <span className="font-semibold">Gaps & Missing Practices</span>
-                            <span className="text-xs text-muted-foreground ml-2">({fingerprint.gaps.length})</span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="space-y-3">
-                            {fingerprint.gaps.map((gap, i) => (
-                              <GapCard key={i} description={gap} severity="medium" />
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )}
+                {/* Gaps & Risk Flags */}
+                {(fingerprint.gaps.length > 0 || fingerprint.risk_flags.length > 0) ? (
+                  <motion.div variants={itemVariants}>
+                    <Accordion type="multiple" defaultValue={['gaps', 'risks']} className="space-y-1">
+                      {/* Gaps */}
+                      {fingerprint.gaps.length > 0 && (
+                        <AccordionItem value="gaps" className="border rounded-lg px-3">
+                          <AccordionTrigger className="hover:no-underline py-2">
+                            <div className="flex items-center gap-1.5">
+                              <AlertTriangle className="size-3.5 text-warning" />
+                              <span className="text-sm font-semibold">Gaps & Missing Practices</span>
+                              <span className="text-xs text-muted-foreground ml-1">({fingerprint.gaps.length})</span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="space-y-2">
+                              {fingerprint.gaps.map((gap, i) => (
+                                <GapCard key={i} description={gap} severity="medium" />
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
 
-                    {/* Risk Flags */}
-                    {fingerprint.risk_flags.length > 0 && (
-                      <AccordionItem value="risks" className="border rounded-lg px-4">
-                        <AccordionTrigger className="hover:no-underline">
-                          <div className="flex items-center gap-2">
-                            <ShieldAlert className="size-4 text-destructive" />
-                            <span className="font-semibold">Risk Flags</span>
-                            <span className="text-xs text-muted-foreground ml-2">({fingerprint.risk_flags.length})</span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="space-y-3">
-                            {fingerprint.risk_flags.map((flag, i) => (
-                              <GapCard key={i} description={flag} severity="high" />
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )}
-                  </Accordion>
-                </motion.div>
+                      {/* Risk Flags */}
+                      {fingerprint.risk_flags.length > 0 && (
+                        <AccordionItem value="risks" className="border rounded-lg px-3">
+                          <AccordionTrigger className="hover:no-underline py-2">
+                            <div className="flex items-center gap-1.5">
+                              <ShieldAlert className="size-3.5 text-destructive" />
+                              <span className="text-sm font-semibold">Risk Flags</span>
+                              <span className="text-xs text-muted-foreground ml-1">({fingerprint.risk_flags.length})</span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="space-y-2">
+                              {fingerprint.risk_flags.map((flag, i) => (
+                                <GapCard key={i} description={flag} severity="high" />
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )}
+                    </Accordion>
+                  </motion.div>
+                ) : (
+                  <motion.div variants={itemVariants} className="flex items-center gap-2 text-sm text-success">
+                    <span>✓</span>
+                    <span>No gaps or risks detected</span>
+                  </motion.div>
+                )}
               </motion.div>
             )}
 
@@ -362,6 +327,47 @@ export default function AnalysisPage() {
               />
             )}
           </TabPanel>
+        </div>
+
+        {/* Right panel - Voice Agent (~45%) */}
+        <div className="w-[45%] border-l border-border p-6 flex flex-col overflow-y-auto scrollbar-hidden">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Stack Analysis</h1>
+          <p className="text-sm text-muted-foreground mb-4">
+            {fingerprint.recommendations_context}
+          </p>
+
+          {/* Project Context Badges */}
+          {(fingerprint.industry || fingerprint.project_type) && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {fingerprint.industry && fingerprint.industry !== 'general' && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Building2 className="size-3" />
+                  {fingerprint.industry}
+                </Badge>
+              )}
+              {fingerprint.project_type && (
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Layers className="size-3" />
+                  {fingerprint.project_type.replace('_', ' ')}
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* GitHub Contributors */}
+          {repoPath && (
+            <div className="mb-4">
+              <GitHubContributors repo={repoPath} limit={8} />
+            </div>
+          )}
+
+          <VoiceAgent
+            status={status}
+            isSpeaking={isSpeaking}
+            messages={messages}
+            onStart={startCall}
+            onEnd={endCall}
+          />
         </div>
       </div>
     </motion.div>

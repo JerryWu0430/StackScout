@@ -58,6 +58,44 @@ PROJECT_TYPE_CATEGORY_MAP = {
     "ml_model": ["Infrastructure", "Monitoring", "Database"],
 }
 
+# Existing tech -> tool categories to penalize
+# If project already has these, don't recommend similar tools
+EXISTING_TECH_PENALTIES = {
+    # CI/CD tools
+    "github actions": ["ci/cd", "ci-cd", "devops", "deployment"],
+    "circleci": ["ci/cd", "ci-cd", "devops", "deployment"],
+    "gitlab ci": ["ci/cd", "ci-cd", "devops", "deployment"],
+    "jenkins": ["ci/cd", "ci-cd", "devops", "deployment"],
+    "travis": ["ci/cd", "ci-cd", "devops", "deployment"],
+    # Monitoring
+    "datadog": ["monitoring", "observability", "apm"],
+    "new relic": ["monitoring", "observability", "apm"],
+    "sentry": ["monitoring", "error tracking", "apm"],
+    "grafana": ["monitoring", "observability"],
+    "prometheus": ["monitoring", "observability"],
+    # Auth
+    "auth0": ["auth", "authentication", "identity"],
+    "firebase auth": ["auth", "authentication", "identity"],
+    "clerk": ["auth", "authentication", "identity"],
+    "supabase auth": ["auth", "authentication", "identity"],
+    "nextauth": ["auth", "authentication", "identity"],
+    # Payments
+    "stripe": ["payments", "billing", "subscriptions"],
+    "braintree": ["payments", "billing"],
+    "paypal": ["payments", "billing"],
+    # Analytics
+    "google analytics": ["analytics", "tracking"],
+    "mixpanel": ["analytics", "tracking"],
+    "amplitude": ["analytics", "tracking"],
+    "posthog": ["analytics", "tracking"],
+    # Database
+    "postgresql": ["database"],
+    "mysql": ["database"],
+    "mongodb": ["database"],
+    "supabase": ["database", "backend"],
+    "firebase": ["database", "backend"],
+}
+
 
 def _cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
     """Compute cosine similarity between two vectors."""
@@ -151,6 +189,32 @@ def _compute_use_case_boost(tool: Tool, use_cases: list[str]) -> tuple[float, li
 
     boost = min(len(matched) * 4, 8.0)
     return boost, matched
+
+
+def _compute_redundancy_penalty(tool: Tool, stack: dict) -> tuple[float, str]:
+    """Penalize tool if project already has similar tech in stack."""
+    # Flatten all stack items
+    all_stack_items = []
+    for category_items in stack.values():
+        if isinstance(category_items, list):
+            all_stack_items.extend([item.lower() for item in category_items])
+
+    stack_text = " ".join(all_stack_items)
+    tool_category_lower = tool.category.lower()
+    tool_tags_lower = [t.lower() for t in tool.tags]
+    tool_name_lower = tool.name.lower()
+
+    # Check if any existing tech triggers a penalty for this tool's category
+    for existing_tech, penalized_categories in EXISTING_TECH_PENALTIES.items():
+        if existing_tech in stack_text:
+            # Check if tool falls into penalized category
+            for penalized_cat in penalized_categories:
+                if (penalized_cat in tool_category_lower or
+                    penalized_cat in tool_name_lower or
+                    any(penalized_cat in tag for tag in tool_tags_lower)):
+                    return -25.0, f"Already has {existing_tech}"
+
+    return 0.0, ""
 
 
 def _calculate_demo_priority(score: float) -> int:
@@ -252,6 +316,7 @@ def get_recommendations(repo_id: str, limit: int = 5) -> list[Recommendation]:
     project_type = fp.get("project_type", "web_app")
     keywords = fp.get("keywords", [])
     use_cases = fp.get("use_cases", [])
+    stack = fp.get("stack", {})
 
     # 2. Create rich embedding from all context
     search_parts = [
@@ -315,7 +380,12 @@ def get_recommendations(repo_id: str, limit: int = 5) -> list[Recommendation]:
         tag_boost = sum(2 for tag in tool.tags if tag.lower() in combined_text)
         tag_boost = min(tag_boost, 7.0)
 
-        final_score = min(base_score + industry_boost + keyword_boost + category_boost + usecase_boost + tag_boost, 100.0)
+        # Redundancy penalty (-25 if project already has similar tech)
+        redundancy_penalty, redundancy_reason = _compute_redundancy_penalty(tool, stack)
+        if redundancy_penalty < 0:
+            reasons.append(MatchReason("redundant", redundancy_reason, redundancy_penalty))
+
+        final_score = max(0, min(base_score + industry_boost + keyword_boost + category_boost + usecase_boost + tag_boost + redundancy_penalty, 100.0))
         scored_tools.append((tool, final_score, reasons))
 
     # Sort and take top N
