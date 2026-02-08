@@ -8,6 +8,7 @@ from routers import repos, tools
 from routers.voice import router as voice_router, demos_router
 from routers.booking import router as booking_router
 from routers.twilio_webhooks import router as twilio_router
+from routers.discovery import router as discovery_router
 
 app = FastAPI(title="CallPilot API")
 
@@ -29,6 +30,9 @@ app.include_router(demos_router)
 # CallPilot routes
 app.include_router(booking_router)
 app.include_router(twilio_router)
+
+# Discovery routes
+app.include_router(discovery_router)
 
 
 @app.get("/")
