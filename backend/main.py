@@ -1,6 +1,9 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -10,7 +13,21 @@ from routers.booking import router as booking_router
 from routers.twilio_webhooks import router as twilio_router
 from routers.discovery import router as discovery_router
 
-app = FastAPI(title="CallPilot API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    if os.getenv("DISCOVERY_SYNC_ENABLED", "").lower() == "true":
+        from services.discovery import schedule_daily_sync
+        hour = int(os.getenv("DISCOVERY_SYNC_HOUR", "3"))
+        schedule_daily_sync(hour=hour)
+    yield
+    # Shutdown
+    from services.discovery.sync import stop_scheduler
+    stop_scheduler()
+
+
+app = FastAPI(title="StackScout API", lifespan=lifespan)
 
 app.include_router(tools.router)
 
@@ -22,7 +39,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# StackScout routes (kept for compatibility)
+# StackScout routes
 app.include_router(repos.router, prefix="/api")
 app.include_router(voice_router)
 app.include_router(demos_router)
@@ -37,7 +54,7 @@ app.include_router(discovery_router)
 
 @app.get("/")
 def root():
-    return {"message": "CallPilot API - AI Appointment Scheduling"}
+    return {"message": "StackScout API", "docs": "/docs"}
 
 
 @app.get("/health")

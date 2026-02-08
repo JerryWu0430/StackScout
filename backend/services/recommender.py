@@ -1,7 +1,7 @@
 # Tool recommendation service
 import os
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from openai import OpenAI
 
 from db.supabase import supabase
@@ -19,11 +19,44 @@ def _get_client() -> OpenAI:
 
 
 @dataclass
+class MatchReason:
+    type: str  # "industry", "keyword", "gap", "use_case", "category"
+    matched: str  # what was matched
+    score_contribution: float
+
+
+@dataclass
 class Recommendation:
     tool: Tool
     suitability_score: float  # 0-100
     demo_priority: int  # 1-5
     explanation: str
+    match_reasons: list[MatchReason] = field(default_factory=list)
+
+
+# Industry -> relevant tool tags mapping
+INDUSTRY_TAG_MAP = {
+    "fintech": ["payments", "fintech", "billing", "subscriptions", "banking", "crypto"],
+    "ecommerce": ["payments", "ecommerce", "checkout", "subscriptions", "search", "analytics"],
+    "healthcare": ["hipaa", "compliance", "security", "auth", "data"],
+    "devtools": ["api", "sdk", "developer", "ci-cd", "devops", "infrastructure"],
+    "saas": ["auth", "billing", "subscriptions", "analytics", "monitoring"],
+    "ai-ml": ["ai", "ml", "data", "gpu", "inference", "training"],
+    "media": ["cdn", "streaming", "storage", "media", "video"],
+    "education": ["auth", "video", "analytics", "notifications"],
+    "general": [],
+}
+
+# Project type -> relevant categories
+PROJECT_TYPE_CATEGORY_MAP = {
+    "api": ["API", "Auth", "Monitoring", "Database", "Security"],
+    "web_app": ["Auth", "Database", "Infrastructure", "Analytics", "Search"],
+    "mobile": ["Auth", "Analytics", "Notifications", "Database"],
+    "cli": ["DevOps", "CI/CD", "Infrastructure"],
+    "library": ["CI/CD", "DevOps", "Monitoring"],
+    "data_pipeline": ["Database", "Monitoring", "Infrastructure"],
+    "ml_model": ["Infrastructure", "Monitoring", "Database"],
+}
 
 
 def _cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
@@ -36,11 +69,44 @@ def _cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
     return dot / (norm_a * norm_b)
 
 
-def _compute_category_boost(tool_category: str, gaps: list[str]) -> float:
-    """Boost score if tool category matches identified gaps."""
-    category_lower = tool_category.lower()
+def _compute_industry_boost(tool_tags: list[str], industry: str) -> tuple[float, list[str]]:
+    """Boost score if tool tags match project industry."""
+    industry_tags = INDUSTRY_TAG_MAP.get(industry.lower(), [])
+    if not industry_tags:
+        return 0.0, []
 
-    # Map common gap keywords to categories
+    matched = []
+    tool_tags_lower = [t.lower() for t in tool_tags]
+
+    for tag in industry_tags:
+        if tag in tool_tags_lower:
+            matched.append(tag)
+
+    # Up to 15 points for industry match
+    boost = min(len(matched) * 5, 15.0)
+    return boost, matched
+
+
+def _compute_keyword_boost(tool: Tool, keywords: list[str]) -> tuple[float, list[str]]:
+    """Boost score if tool matches project keywords."""
+    tool_text = f"{tool.name} {tool.description} {' '.join(tool.tags)}".lower()
+    matched = []
+
+    for kw in keywords:
+        if kw.lower() in tool_text:
+            matched.append(kw)
+
+    # Up to 10 points for keyword matches
+    boost = min(len(matched) * 3, 10.0)
+    return boost, matched
+
+
+def _compute_category_boost(tool_category: str, gaps: list[str], project_type: str) -> tuple[float, list[str]]:
+    """Boost score if tool category matches gaps or project type."""
+    category_lower = tool_category.lower()
+    matched = []
+
+    # Map gap keywords to categories
     gap_category_map = {
         "monitoring": ["monitoring", "observability", "logging", "metrics", "apm"],
         "auth": ["auth", "authentication", "identity", "sso", "security"],
@@ -54,26 +120,37 @@ def _compute_category_boost(tool_category: str, gaps: list[str]) -> float:
         "security": ["security", "vulnerability", "compliance", "encryption"],
     }
 
+    # Check gaps
     for gap in gaps:
         gap_lower = gap.lower()
         for cat, keywords in gap_category_map.items():
-            if cat in category_lower or any(kw in gap_lower for kw in keywords):
-                if any(kw in gap_lower for kw in keywords) and cat in category_lower:
-                    return 15.0  # Strong category match
-    return 0.0
+            if cat in category_lower and any(kw in gap_lower for kw in keywords):
+                matched.append(f"gap:{gap[:30]}")
+                break
+
+    # Check project type relevance
+    relevant_categories = PROJECT_TYPE_CATEGORY_MAP.get(project_type, [])
+    if any(cat.lower() in category_lower for cat in relevant_categories):
+        matched.append(f"type:{project_type}")
+
+    boost = min(len(matched) * 5, 10.0)
+    return boost, matched
 
 
-def _compute_tag_boost(tool_tags: list[str], gaps: list[str], context: str) -> float:
-    """Boost score based on tag relevance to gaps and context."""
-    boost = 0.0
-    combined_text = " ".join(gaps).lower() + " " + context.lower()
+def _compute_use_case_boost(tool: Tool, use_cases: list[str]) -> tuple[float, list[str]]:
+    """Boost if tool description matches use cases."""
+    tool_text = f"{tool.description} {' '.join(tool.tags)}".lower()
+    matched = []
 
-    for tag in tool_tags:
-        tag_lower = tag.lower()
-        if tag_lower in combined_text:
-            boost += 3.0  # Each matching tag adds points
+    for uc in use_cases:
+        # Check if key words from use case appear in tool
+        uc_words = [w for w in uc.lower().split() if len(w) > 3]
+        matches = sum(1 for w in uc_words if w in tool_text)
+        if matches >= 2:  # At least 2 words match
+            matched.append(uc[:40])
 
-    return min(boost, 10.0)  # Cap tag boost at 10
+    boost = min(len(matched) * 4, 8.0)
+    return boost, matched
 
 
 def _calculate_demo_priority(score: float) -> int:
@@ -90,19 +167,19 @@ def _calculate_demo_priority(score: float) -> int:
         return 5
 
 
-def _generate_explanation(tool: Tool, gaps: list[str], context: str) -> str:
+def _generate_explanation(
+    tool: Tool, gaps: list[str], context: str, industry: str, keywords: list[str]
+) -> str:
     """Generate LLM explanation for why this tool is recommended."""
     client = _get_client()
     model = os.getenv("LITELLM_MODEL", "gpt-4o-mini")
 
-    prompt = f"""Given a repository with these identified gaps: {', '.join(gaps)}
-And this context: {context}
+    prompt = f"""A {industry} project with keywords [{', '.join(keywords[:5])}] has these gaps: {', '.join(gaps[:3])}
+Context: {context}
 
-Explain in 1-2 sentences why {tool.name} ({tool.category}) would be a good fit.
-Tool description: {tool.description}
-Tool tags: {', '.join(tool.tags)}
-
-Be specific about how it addresses the gaps. Keep it concise."""
+Explain in 1-2 sentences why {tool.name} ({tool.category}) is recommended.
+Tool: {tool.description}
+Be specific about the industry/project fit. Keep it concise."""
 
     response = client.chat.completions.create(
         model=model,
@@ -114,7 +191,7 @@ Be specific about how it addresses the gaps. Keep it concise."""
 
 
 def _generate_explanations_batch(
-    tools: list[Tool], gaps: list[str], context: str
+    tools: list[Tool], gaps: list[str], context: str, industry: str, keywords: list[str]
 ) -> list[str]:
     """Generate explanations for multiple tools in batch."""
     client = _get_client()
@@ -124,16 +201,16 @@ def _generate_explanations_batch(
         f"- {t.name} ({t.category}): {t.description}" for t in tools
     )
 
-    prompt = f"""Given a repository with these identified gaps: {', '.join(gaps)}
-And this context: {context}
+    prompt = f"""A {industry} project with keywords [{', '.join(keywords[:5])}] has these gaps: {', '.join(gaps[:3])}
+Context: {context}
 
-For each tool below, write a 1-2 sentence explanation of why it's recommended.
-Be specific about how each tool addresses the gaps. Keep each explanation concise.
+For each tool, write 1 sentence explaining why it fits this specific project.
+Focus on industry relevance and how it addresses their needs.
 
 Tools:
 {tools_info}
 
-Respond in JSON format: {{"explanations": ["explanation1", "explanation2", ...]}}"""
+Respond in JSON: {{"explanations": ["explanation1", "explanation2", ...]}}"""
 
     response = client.chat.completions.create(
         model=model,
@@ -144,7 +221,6 @@ Respond in JSON format: {{"explanations": ["explanation1", "explanation2", ...]}
 
     try:
         content = response.choices[0].message.content.strip()
-        # Handle potential markdown code blocks
         if content.startswith("```"):
             content = content.split("```")[1]
             if content.startswith("json"):
@@ -152,21 +228,11 @@ Respond in JSON format: {{"explanations": ["explanation1", "explanation2", ...]}
         result = json.loads(content)
         return result.get("explanations", ["" for _ in tools])
     except (json.JSONDecodeError, KeyError):
-        # Fallback: generate individually
-        return [_generate_explanation(t, gaps, context) for t in tools]
+        return [_generate_explanation(t, gaps, context, industry, keywords) for t in tools]
 
 
 def get_recommendations(repo_id: str, limit: int = 5) -> list[Recommendation]:
-    """
-    Get tool recommendations for a repository.
-
-    Args:
-        repo_id: The repository ID to get recommendations for
-        limit: Maximum number of recommendations to return
-
-    Returns:
-        List of Recommendation objects sorted by suitability score
-    """
+    """Get tool recommendations for a repository."""
     # 1. Get repo fingerprint from DB
     repo_result = supabase.table("repos").select("*").eq("id", repo_id).execute()
     if not repo_result.data:
@@ -179,30 +245,38 @@ def get_recommendations(repo_id: str, limit: int = 5) -> list[Recommendation]:
         raise ValueError(f"Repository {repo_id} has no fingerprint")
 
     # Parse fingerprint JSON
-    fingerprint = json.loads(fingerprint_raw) if isinstance(fingerprint_raw, str) else fingerprint_raw
-    gaps = fingerprint.get("gaps", [])
-    recommendations_context = fingerprint.get("recommendations_context", "")
+    fp = json.loads(fingerprint_raw) if isinstance(fingerprint_raw, str) else fingerprint_raw
+    gaps = fp.get("gaps", [])
+    context = fp.get("recommendations_context", "")
+    industry = fp.get("industry", "general")
+    project_type = fp.get("project_type", "web_app")
+    keywords = fp.get("keywords", [])
+    use_cases = fp.get("use_cases", [])
 
-    # 2. Create embedding from gaps + recommendations_context
-    search_text = " ".join(gaps) + " " + recommendations_context
+    # 2. Create rich embedding from all context
+    search_parts = [
+        f"Industry: {industry}",
+        f"Project type: {project_type}",
+        f"Keywords: {' '.join(keywords)}",
+        f"Gaps: {' '.join(gaps)}",
+        f"Use cases: {' '.join(use_cases)}",
+        context,
+    ]
+    search_text = " ".join(search_parts)
     query_embedding = get_embedding(search_text)
 
-    # 3. Vector similarity search in tool_embeddings
-    # Fetch all tool embeddings (for now - could use pgvector RPC later)
+    # 3. Fetch all tools and embeddings
     embeddings_result = supabase.table("tool_embeddings").select("*").execute()
     tools_result = supabase.table("tools").select("*").execute()
-
-    # Build tool lookup
     tools_by_id = {t["id"]: Tool(**t) for t in tools_result.data}
 
-    # 4. Calculate suitability scores
-    scored_tools: list[tuple[Tool, float]] = []
+    # 4. Score each tool
+    scored_tools: list[tuple[Tool, float, list[MatchReason]]] = []
 
     for emb_row in embeddings_result.data:
         tool_id = emb_row["tool_id"]
         tool_embedding = emb_row["embedding"]
 
-        # Parse embedding if stored as string
         if isinstance(tool_embedding, str):
             tool_embedding = json.loads(tool_embedding)
 
@@ -210,41 +284,60 @@ def get_recommendations(repo_id: str, limit: int = 5) -> list[Recommendation]:
             continue
 
         tool = tools_by_id[tool_id]
+        reasons = []
 
-        # Base score: cosine similarity (0-1) -> (0-75)
+        # Base: cosine similarity (0-50)
         similarity = _cosine_similarity(query_embedding, tool_embedding)
-        base_score = similarity * 75
+        base_score = similarity * 50
 
-        # Boost: category match to gaps (0-15)
-        category_boost = _compute_category_boost(tool.category, gaps)
+        # Industry boost (0-15)
+        industry_boost, industry_matched = _compute_industry_boost(tool.tags, industry)
+        if industry_matched:
+            reasons.append(MatchReason("industry", f"{industry}: {', '.join(industry_matched)}", industry_boost))
 
-        # Boost: tag relevance (0-10)
-        tag_boost = _compute_tag_boost(tool.tags, gaps, recommendations_context)
+        # Keyword boost (0-10)
+        keyword_boost, keyword_matched = _compute_keyword_boost(tool, keywords)
+        if keyword_matched:
+            reasons.append(MatchReason("keyword", ', '.join(keyword_matched[:3]), keyword_boost))
 
-        # Final score (0-100)
-        final_score = min(base_score + category_boost + tag_boost, 100.0)
+        # Category/gap boost (0-10)
+        category_boost, category_matched = _compute_category_boost(tool.category, gaps, project_type)
+        if category_matched:
+            reasons.append(MatchReason("gap", ', '.join(category_matched[:2]), category_boost))
 
-        scored_tools.append((tool, final_score))
+        # Use case boost (0-8)
+        usecase_boost, usecase_matched = _compute_use_case_boost(tool, use_cases)
+        if usecase_matched:
+            reasons.append(MatchReason("use_case", usecase_matched[0], usecase_boost))
 
-    # Sort by score descending and take top N
+        # Tag relevance (0-7)
+        combined_text = " ".join(gaps + keywords + use_cases).lower()
+        tag_boost = sum(2 for tag in tool.tags if tag.lower() in combined_text)
+        tag_boost = min(tag_boost, 7.0)
+
+        final_score = min(base_score + industry_boost + keyword_boost + category_boost + usecase_boost + tag_boost, 100.0)
+        scored_tools.append((tool, final_score, reasons))
+
+    # Sort and take top N
     scored_tools.sort(key=lambda x: x[1], reverse=True)
     top_tools = scored_tools[:limit]
 
-    # 5. Generate explanations per tool using LLM (batch)
+    # 5. Generate explanations
     if top_tools:
-        tools_list = [t for t, _ in top_tools]
-        explanations = _generate_explanations_batch(tools_list, gaps, recommendations_context)
+        tools_list = [t for t, _, _ in top_tools]
+        explanations = _generate_explanations_batch(tools_list, gaps, context, industry, keywords)
     else:
         explanations = []
 
-    # 6. Build and return recommendations
+    # 6. Build recommendations
     recommendations = []
-    for i, (tool, score) in enumerate(top_tools):
+    for i, (tool, score, reasons) in enumerate(top_tools):
         rec = Recommendation(
             tool=tool,
             suitability_score=round(score, 1),
             demo_priority=_calculate_demo_priority(score),
             explanation=explanations[i] if i < len(explanations) else "",
+            match_reasons=reasons,
         )
         recommendations.append(rec)
 

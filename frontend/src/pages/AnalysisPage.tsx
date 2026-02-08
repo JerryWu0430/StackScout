@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { AlertTriangle, ShieldAlert } from 'lucide-react'
+import { AlertTriangle, ShieldAlert, Building2, Layers, Tags } from 'lucide-react'
 import VoiceAgent from '../components/VoiceAgent'
 import TabPanel from '../components/TabPanel'
 import StackCard from '../components/StackCard'
@@ -13,28 +13,14 @@ import useAnalysisVoice from '../hooks/useAnalysisVoice'
 import { Card, CardContent } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
 import { Progress } from '@/components/ui/progress'
+import { Badge } from '@/components/ui/badge'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
-import type { RepoResponse, TechStack } from '../types/api'
-
-interface Tool {
-  id: string
-  name: string
-  category: string
-  description?: string
-  tags: string[]
-}
-
-interface Recommendation {
-  tool: Tool
-  suitability_score: number
-  demo_priority: number
-  explanation: string
-}
+import type { RepoResponse, TechStack, Tool, Recommendation } from '../types/api'
 
 interface BookingState {
   toolId: string
@@ -182,6 +168,41 @@ export default function AnalysisPage() {
             {fingerprint.recommendations_context}
           </p>
 
+          {/* Project Context Badges */}
+          {(fingerprint.industry || fingerprint.project_type) && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {fingerprint.industry && fingerprint.industry !== 'general' && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Building2 className="size-3" />
+                  {fingerprint.industry}
+                </Badge>
+              )}
+              {fingerprint.project_type && (
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Layers className="size-3" />
+                  {fingerprint.project_type.replace('_', ' ')}
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Keywords */}
+          {fingerprint.keywords && fingerprint.keywords.length > 0 && (
+            <div className="mb-6">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                <Tags className="size-3" />
+                <span>Keywords</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {fingerprint.keywords.slice(0, 8).map((kw, i) => (
+                  <Badge key={i} variant="outline" className="text-xs font-normal">
+                    {kw}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
           <VoiceAgent
             status={status}
             isSpeaking={isSpeaking}
@@ -227,6 +248,25 @@ export default function AnalysisPage() {
                     ))}
                   </div>
                 </motion.div>
+
+                {/* Use Cases */}
+                {fingerprint.use_cases && fingerprint.use_cases.length > 0 && (
+                  <motion.div variants={itemVariants}>
+                    <Card>
+                      <CardContent>
+                        <h2 className="text-lg font-semibold text-card-foreground mb-3">Use Cases</h2>
+                        <ul className="space-y-2">
+                          {fingerprint.use_cases.map((uc, i) => (
+                            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <span className="text-primary">•</span>
+                              {uc}
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
 
                 {/* Gaps & Risk Flags in Accordion */}
                 <motion.div variants={itemVariants}>
@@ -303,6 +343,7 @@ export default function AnalysisPage() {
                       suitabilityScore={rec.suitability_score}
                       demoPriority={rec.demo_priority}
                       explanation={rec.explanation}
+                      matchReasons={rec.match_reasons}
                       onBookDemo={() => handleBookDemo(rec.tool)}
                     />
                   </motion.div>

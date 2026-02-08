@@ -9,11 +9,18 @@ from services.recommender import get_recommendations, Recommendation
 router = APIRouter(prefix="/api", tags=["tools"])
 
 
+class MatchReasonResponse(BaseModel):
+    type: str  # "industry", "keyword", "gap", "use_case"
+    matched: str
+    score_contribution: float
+
+
 class RecommendationResponse(BaseModel):
     tool: Tool
     suitability_score: float
     demo_priority: int
     explanation: str
+    match_reasons: list[MatchReasonResponse] = []
 
 
 @router.get("/tools", response_model=list[Tool])
@@ -64,6 +71,14 @@ def get_repo_recommendations(repo_id: str, limit: int = Query(5, ge=1, le=20)):
                 suitability_score=rec.suitability_score,
                 demo_priority=rec.demo_priority,
                 explanation=rec.explanation,
+                match_reasons=[
+                    MatchReasonResponse(
+                        type=r.type,
+                        matched=r.matched,
+                        score_contribution=r.score_contribution,
+                    )
+                    for r in rec.match_reasons
+                ],
             )
             for rec in recommendations
         ]

@@ -19,6 +19,11 @@ class RepoFingerprint(BaseModel):
     risk_flags: list[str] = Field(default_factory=list, description="Potential issues")
     complexity_score: int = Field(ge=1, le=10, description="Complexity rating 1-10")
     recommendations_context: str = Field(description="Summary for embedding/matching")
+    # New fields for better matching
+    industry: str = Field(default="general", description="Industry: fintech, ecommerce, healthcare, devtools, saas, ai-ml, media, education, general")
+    project_type: str = Field(default="web_app", description="Type: api, web_app, mobile, cli, library, data_pipeline, ml_model")
+    keywords: list[str] = Field(default_factory=list, description="Key domain terms extracted from README/code")
+    use_cases: list[str] = Field(default_factory=list, description="What the project does/solves")
 
 
 def _get_client() -> OpenAI:
@@ -40,11 +45,42 @@ Languages (bytes):
 {languages}
 
 Based on the files, identify:
+
 1. **Stack**: Categorize technologies into frontend, backend, database, infrastructure
+
 2. **Gaps**: Missing best practices (CI/CD, testing, monitoring, security, docs, etc.)
+
 3. **Risk Flags**: Potential issues (outdated deps, security concerns, missing configs)
+
 4. **Complexity Score**: 1-10 based on project size, tech diversity, architecture complexity
-5. **Recommendations Context**: 2-3 sentence summary of what tools/services would help this project
+
+5. **Recommendations Context**: 2-3 sentence summary of what tools/services would help
+
+6. **Industry**: Detect the business domain. Choose ONE from:
+   - fintech (payments, banking, trading, crypto)
+   - ecommerce (retail, marketplace, shopping)
+   - healthcare (medical, health tech, fitness)
+   - devtools (developer tools, SDKs, APIs for developers)
+   - saas (B2B software, productivity tools)
+   - ai-ml (AI/ML products, data science)
+   - media (content, streaming, social)
+   - education (learning, courses, edtech)
+   - general (other/unclear)
+
+7. **Project Type**: What kind of software. Choose ONE from:
+   - api (REST/GraphQL API service)
+   - web_app (full-stack web application)
+   - mobile (iOS/Android app)
+   - cli (command-line tool)
+   - library (reusable package/SDK)
+   - data_pipeline (ETL, data processing)
+   - ml_model (ML training/inference)
+
+8. **Keywords**: Extract 5-10 domain-specific keywords that describe what this project does.
+   Examples: "payments", "authentication", "real-time chat", "image processing", "api gateway"
+
+9. **Use Cases**: 2-4 specific things this project enables/solves.
+   Examples: "process credit card payments", "manage user sessions", "analyze customer data"
 
 Be specific about versions and technologies detected. Focus on actionable insights.
 
@@ -82,7 +118,11 @@ RESPONSE_SCHEMA = """{
   "gaps": ["list of missing best practices"],
   "risk_flags": ["list of potential issues"],
   "complexity_score": 1-10,
-  "recommendations_context": "summary string"
+  "recommendations_context": "summary string",
+  "industry": "one of: fintech, ecommerce, healthcare, devtools, saas, ai-ml, media, education, general",
+  "project_type": "one of: api, web_app, mobile, cli, library, data_pipeline, ml_model",
+  "keywords": ["domain", "specific", "keywords"],
+  "use_cases": ["what the project does"]
 }"""
 
 

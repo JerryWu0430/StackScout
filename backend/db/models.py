@@ -11,6 +11,7 @@ class Tool(BaseModel):
     url: Optional[str] = None
     booking_url: Optional[str] = None
     tags: list[str] = []
+    source: Optional[str] = None  # "product_hunt", "yc", "github", or None (seeded)
 
 
 class ToolEmbedding(BaseModel):
