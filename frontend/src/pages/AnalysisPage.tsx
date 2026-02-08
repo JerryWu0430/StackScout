@@ -78,7 +78,7 @@ export default function AnalysisPage() {
     staleTime: 5 * 60 * 1000,
   })
 
-  const { status, isSpeaking, startCall, endCall } = useAnalysisVoice({ autoStart: false })
+  const { status, isSpeaking, messages, startCall, endCall } = useAnalysisVoice({ autoStart: false })
 
   const handleBookDemo = useCallback(async (tool: Tool) => {
     try {
@@ -206,6 +206,7 @@ export default function AnalysisPage() {
           <VoiceAgent
             status={status}
             isSpeaking={isSpeaking}
+            messages={messages}
             onStart={startCall}
             onEnd={endCall}
           />
