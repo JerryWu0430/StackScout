@@ -1,7 +1,8 @@
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { GlowingEffect } from '@/components/ui/glowing-effect'
 import type { Tool, MatchReason } from '@/types/api'
 
 interface ToolCardProps {
@@ -11,6 +12,8 @@ interface ToolCardProps {
   explanation: string
   matchReasons?: MatchReason[]
   onBookDemo?: () => void
+  onDraftEmail?: () => void
+  isDraftingEmail?: boolean
 }
 
 function getScoreColor(score: number): string {
@@ -75,11 +78,14 @@ export default function ToolCard({
   explanation,
   matchReasons = [],
   onBookDemo,
+  onDraftEmail,
+  isDraftingEmail = false,
 }: ToolCardProps) {
   const sourceInfo = getSourceLabel(tool.source)
 
   return (
-    <Card>
+    <Card className="relative">
+      <GlowingEffect glow />
       <CardContent className="space-y-4">
         <div className="flex justify-between items-start">
           <div className="flex-1 min-w-0">
@@ -148,17 +154,24 @@ export default function ToolCard({
         <p className="text-muted-foreground text-sm italic">{explanation}</p>
 
         <div className="flex gap-2">
-          <Button onClick={onBookDemo} size="sm">
+          {onDraftEmail && (
+            <Button onClick={onDraftEmail} size="sm" disabled={isDraftingEmail}>
+              <Mail className="size-3.5 mr-1" />
+              {isDraftingEmail ? 'Creating...' : 'Draft Email'}
+            </Button>
+          )}
+          <Button onClick={onBookDemo} size="sm" variant="outline">
             Book Demo
           </Button>
           {tool.url && (
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               asChild
             >
               <a href={tool.url} target="_blank" rel="noopener noreferrer">
-                Visit Website
+                <ExternalLink className="size-3.5 mr-1" />
+                Website
               </a>
             </Button>
           )}

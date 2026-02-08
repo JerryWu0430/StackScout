@@ -1,0 +1,104 @@
+{
+  "tools": [
+    {
+      "type": "webhook",
+      "name": "get_email_context",
+      "description": "Get context about the user's project and recommended tool to discuss email drafting. Call this at the start of the conversation to understand their tech stack and needs.",
+      "api_schema": {
+        "url": "https://unexcused-sincere-keramic.ngrok-free.dev/api/voice/tool/get-email-context",
+        "method": "POST",
+        "path_params_schema": [],
+        "query_params_schema": [],
+        "request_body_schema": {
+          "type": "object",
+          "properties": [
+            {
+              "id": "repo_id",
+              "type": "string",
+              "description": "The repository ID",
+              "value_type": "dynamic_variable",
+              "dynamic_variable": "repo_id",
+              "required": true
+            },
+            {
+              "id": "tool_id",
+              "type": "string",
+              "description": "The tool ID being discussed",
+              "value_type": "dynamic_variable",
+              "dynamic_variable": "tool_id",
+              "required": false
+            }
+          ]
+        },
+        "request_headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      },
+      "response_timeout_secs": 10
+    },
+    {
+      "type": "webhook",
+      "name": "capture_interest",
+      "description": "Record a specific interest, use case, or requirement the user mentions. Call this whenever the user expresses what they want from the tool or what problems they're trying to solve.",
+      "api_schema": {
+        "url": "https://unexcused-sincere-keramic.ngrok-free.dev/api/voice/tool/capture-interest",
+        "method": "POST",
+        "path_params_schema": [],
+        "query_params_schema": [],
+        "request_body_schema": {
+          "type": "object",
+          "properties": [
+            {
+              "id": "repo_id",
+              "type": "string",
+              "description": "The repository ID",
+              "value_type": "dynamic_variable",
+              "dynamic_variable": "repo_id",
+              "required": true
+            },
+            {
+              "id": "interest",
+              "type": "string",
+              "description": "The specific interest or requirement the user mentioned",
+              "value_type": "llm_prompt",
+              "required": true
+            },
+            {
+              "id": "tool_name",
+              "type": "string",
+              "description": "Name of the tool being discussed",
+              "value_type": "dynamic_variable",
+              "dynamic_variable": "tool_name",
+              "required": false
+            }
+          ]
+        },
+        "request_headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      },
+      "response_timeout_secs": 5
+    }
+  ],
+  "dynamic_variables": {
+    "repo_id": "Pass from frontend when starting conversation",
+    "tool_id": "Pass from frontend when starting conversation",
+    "tool_name": "Pass from frontend when starting conversation"
+  },
+  "notes": {
+    "setup": [
+      "1. Replace YOUR_DOMAIN.com with your actual domain (or ngrok URL for local dev)",
+      "2. In ElevenLabs dashboard, go to Agent > Tools > Add Tool",
+      "3. Paste each tool config",
+      "4. Set up dynamic variables in Agent > Settings > Dynamic Variables",
+      "5. Update agent system prompt to use these tools"
+    ],
+    "system_prompt_addition": "You have access to tools:\n- get_email_context: Call at conversation start to understand the user's project\n- capture_interest: Call whenever user mentions specific needs, use cases, or requirements they want from the tool\n\nAlways capture important interests the user expresses so we can personalize their demo request email."
+  }
+}

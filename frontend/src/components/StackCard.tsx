@@ -1,6 +1,7 @@
 import { Monitor, Server, Database, Cloud, Package } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { GlowingEffect } from '@/components/ui/glowing-effect'
 
 interface StackCardProps {
   category: string
@@ -21,7 +22,8 @@ export default function StackCard({ category, technologies }: StackCardProps) {
   const Icon = config.icon
 
   return (
-    <Card className="p-0">
+    <Card className="relative p-0">
+      <GlowingEffect glow />
       <CardContent className="p-3">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
