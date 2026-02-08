@@ -1,7 +1,8 @@
-import { Link } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface Tool {
-  id: number
+  id: number | string
   name: string
   category: string
   description?: string
@@ -13,13 +14,13 @@ interface ToolCardProps {
   suitabilityScore: number
   demoPriority: number
   explanation: string
-  repoId: string
+  onBookDemo?: () => void
 }
 
 function getScoreColor(score: number): string {
-  if (score >= 80) return 'bg-green-500'
-  if (score >= 60) return 'bg-yellow-500'
-  return 'bg-orange-500'
+  if (score >= 80) return 'bg-success'
+  if (score >= 60) return 'bg-warning'
+  return 'bg-destructive'
 }
 
 function getPriorityLabel(priority: number): string {
@@ -29,9 +30,9 @@ function getPriorityLabel(priority: number): string {
 }
 
 function getPriorityColor(priority: number): string {
-  if (priority <= 2) return 'bg-red-100 text-red-700'
-  if (priority <= 3) return 'bg-yellow-100 text-yellow-700'
-  return 'bg-gray-100 text-gray-600'
+  if (priority <= 2) return 'bg-destructive-muted text-destructive'
+  if (priority <= 3) return 'bg-warning-muted text-warning-foreground'
+  return 'bg-muted text-muted-foreground'
 }
 
 export default function ToolCard({
@@ -39,46 +40,45 @@ export default function ToolCard({
   suitabilityScore,
   demoPriority,
   explanation,
-  repoId,
+  onBookDemo,
 }: ToolCardProps) {
   return (
-    <div className="bg-white p-5 rounded-lg shadow-md">
-      <div className="flex justify-between items-start mb-3">
+    <Card>
+      <CardContent className="space-y-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-lg font-semibold text-card-foreground">{tool.name}</h3>
+            <p className="text-muted-foreground text-sm">{tool.description}</p>
+          </div>
+          <div className="flex gap-2">
+            <span className={`text-xs px-2 py-1 rounded font-medium ${getPriorityColor(demoPriority)}`}>
+              {getPriorityLabel(demoPriority)}
+            </span>
+            <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
+              {tool.category}
+            </span>
+          </div>
+        </div>
+
         <div>
-          <h3 className="text-lg font-semibold text-gray-800">{tool.name}</h3>
-          <p className="text-gray-600 text-sm">{tool.description}</p>
+          <div className="flex justify-between text-sm mb-1">
+            <span className="text-muted-foreground">Suitability Score</span>
+            <span className="font-medium text-card-foreground">{Math.round(suitabilityScore)}%</span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-2">
+            <div
+              className={`h-2 rounded-full ${getScoreColor(suitabilityScore)}`}
+              style={{ width: `${suitabilityScore}%` }}
+            />
+          </div>
         </div>
-        <div className="flex gap-2">
-          <span className={`text-xs px-2 py-1 rounded font-medium ${getPriorityColor(demoPriority)}`}>
-            {getPriorityLabel(demoPriority)}
-          </span>
-          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-            {tool.category}
-          </span>
-        </div>
-      </div>
 
-      <div className="mb-3">
-        <div className="flex justify-between text-sm mb-1">
-          <span className="text-gray-600">Suitability Score</span>
-          <span className="font-medium text-gray-800">{Math.round(suitabilityScore)}%</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className={`h-2 rounded-full ${getScoreColor(suitabilityScore)}`}
-            style={{ width: `${suitabilityScore}%` }}
-          />
-        </div>
-      </div>
+        <p className="text-muted-foreground text-sm italic">{explanation}</p>
 
-      <p className="text-gray-600 text-sm mb-4 italic">{explanation}</p>
-
-      <Link
-        to={`/schedule/${repoId}/${tool.id}`}
-        className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-      >
-        Schedule Demo
-      </Link>
-    </div>
+        <Button onClick={onBookDemo} size="sm">
+          Book Demo
+        </Button>
+      </CardContent>
+    </Card>
   )
 }
