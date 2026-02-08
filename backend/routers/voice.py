@@ -17,7 +17,8 @@ router = APIRouter(prefix="/api/voice", tags=["voice"])
 
 class StartConversationRequest(BaseModel):
     repo_id: int
-    tool_id: int
+    tool_id: Optional[int] = None
+    mode: str = 'analysis'  # 'analysis' | 'scheduling'
 
 
 class StartConversationResponse(BaseModel):
@@ -52,29 +53,53 @@ class DemoResponse(BaseModel):
 
 @router.post("/start", response_model=StartConversationResponse)
 async def start_conversation(request: StartConversationRequest):
-    """Start ElevenLabs conversation session for voice demo."""
-    # Fetch tool info
-    tool_res = supabase.table("tools").select("*").eq("id", request.tool_id).execute()
-    if not tool_res.data:
-        raise HTTPException(status_code=404, detail="Tool not found")
-    tool = tool_res.data[0]
-
+    """Start ElevenLabs conversation session for voice demo or analysis."""
     # Fetch repo fingerprint for stack info
     repo_res = supabase.table("repos").select("*").eq("id", request.repo_id).execute()
     if not repo_res.data:
         raise HTTPException(status_code=404, detail="Repo not found")
     repo = repo_res.data[0]
 
-    # Parse stack from fingerprint
+    # Parse fingerprint data
     stack = []
+    gaps = []
+    risk_flags = []
+    recommendations_context = ""
     if repo.get("fingerprint"):
         import json
         try:
             fp = json.loads(repo["fingerprint"])
-            tech = fp.get("tech_stack", {})
-            stack = tech.get("frontend", []) + tech.get("backend", []) + tech.get("database", [])
+            tech = fp.get("tech_stack", fp.get("stack", {}))
+            stack = (tech.get("frontend", []) + tech.get("backend", []) +
+                    tech.get("database", []) + tech.get("infrastructure", []))
+            gaps = fp.get("gaps", [])
+            risk_flags = fp.get("risk_flags", [])
+            recommendations_context = fp.get("recommendations_context", "")
         except (json.JSONDecodeError, TypeError):
             pass
+
+    # Handle analysis mode
+    if request.mode == 'analysis':
+        context = elevenlabs.AnalysisContext(
+            repo_stack=stack,
+            gaps=gaps,
+            risk_flags=risk_flags,
+            recommendations_context=recommendations_context,
+        )
+        session = await elevenlabs.create_analysis_conversation(context)
+        return StartConversationResponse(
+            session_id=session.session_id,
+            websocket_url=session.signed_url,
+        )
+
+    # Handle scheduling mode (requires tool_id)
+    if not request.tool_id:
+        raise HTTPException(status_code=400, detail="tool_id required for scheduling mode")
+
+    tool_res = supabase.table("tools").select("*").eq("id", request.tool_id).execute()
+    if not tool_res.data:
+        raise HTTPException(status_code=404, detail="Tool not found")
+    tool = tool_res.data[0]
 
     # Get available demo times
     try:

@@ -2,7 +2,7 @@
 import os
 import json
 from pydantic import BaseModel, Field
-from openai import OpenAI, RateLimitError
+from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 
@@ -19,11 +19,21 @@ class RepoFingerprint(BaseModel):
     risk_flags: list[str] = Field(default_factory=list, description="Potential issues")
     complexity_score: int = Field(ge=1, le=10, description="Complexity rating 1-10")
     recommendations_context: str = Field(description="Summary for embedding/matching")
+    # New fields for better matching
+    industry: str = Field(default="general", description="Industry: fintech, ecommerce, healthcare, devtools, saas, ai-ml, media, education, general")
+    project_type: str = Field(default="web_app", description="Type: api, web_app, mobile, cli, library, data_pipeline, ml_model")
+    keywords: list[str] = Field(default_factory=list, description="Key domain terms extracted from README/code")
+    use_cases: list[str] = Field(default_factory=list, description="What the project does/solves")
 
 
 def _get_client() -> OpenAI:
-    """Get OpenAI client (lazy init)."""
-    return OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    """Get OpenAI-compatible client (LiteLLM or OpenAI)."""
+    base_url = os.getenv("LITELLM_BASE_URL")
+    api_key = os.getenv("LITELLM_API_KEY") or os.getenv("OPENAI_API_KEY")
+
+    if base_url:
+        return OpenAI(base_url=base_url, api_key=api_key)
+    return OpenAI(api_key=api_key)
 
 
 ANALYSIS_PROMPT = """Analyze this repository and provide a detailed fingerprint.
@@ -35,13 +45,64 @@ Languages (bytes):
 {languages}
 
 Based on the files, identify:
-1. **Stack**: Categorize technologies into frontend, backend, database, infrastructure
-2. **Gaps**: Missing best practices (CI/CD, testing, monitoring, security, docs, etc.)
-3. **Risk Flags**: Potential issues (outdated deps, security concerns, missing configs)
-4. **Complexity Score**: 1-10 based on project size, tech diversity, architecture complexity
-5. **Recommendations Context**: 2-3 sentence summary of what tools/services would help this project
 
-Be specific about versions and technologies detected. Focus on actionable insights."""
+1. **Stack**: Categorize technologies into frontend, backend, database, infrastructure
+
+2. **Gaps**: Missing best practices. Check files carefully:
+   - CI/CD: Missing if no .github/workflows/, .gitlab-ci.yml, Jenkinsfile, .circleci/
+   - Testing: Missing if no tests/, __tests__/, spec/, pytest.ini, jest.config, or *_test.* files
+   - Monitoring: Missing if no logging setup, no APM/observability tools configured
+   - Security: Missing if no auth system, no input validation, exposed secrets
+   - Documentation: Missing if README lacks setup instructions, no API docs for APIs
+   - Error handling: Missing if no try/catch, error boundaries, or graceful failures
+   - Type safety: Missing if JS project without TypeScript, Python without type hints
+   Be specific: "No unit tests found" not just "Testing". Most projects have 2-4 gaps.
+
+3. **Risk Flags**: Concrete issues you can see in the code:
+   - Outdated deps: Check package.json/requirements.txt versions
+   - Security issues: Hardcoded secrets, SQL injection, XSS, unsafe eval()
+   - Tech debt: Deep nesting, god classes, no separation of concerns
+   - No error handling: Silent failures, missing try/catch in async code
+   - Missing types: Untyped function params in TypeScript, Any overuse
+   Be specific about file/line if possible. Most codebases have 1-3 risks.
+
+4. **Complexity Score**: 1-10 based on project size, tech diversity, architecture complexity
+
+5. **Recommendations Context**: 2-3 sentence summary of what tools/services would help
+
+6. **Industry**: Detect the business domain. Choose ONE from:
+   - fintech (payments, banking, trading, crypto)
+   - ecommerce (retail, marketplace, shopping)
+   - healthcare (medical, health tech, fitness)
+   - devtools (developer tools, SDKs, APIs for developers)
+   - saas (B2B software, productivity tools)
+   - ai-ml (AI/ML products, data science)
+   - media (content, streaming, social)
+   - education (learning, courses, edtech)
+   - general (other/unclear)
+
+7. **Project Type**: What kind of software. Choose ONE from:
+   - api (REST/GraphQL API service)
+   - web_app (full-stack web application)
+   - mobile (iOS/Android app)
+   - cli (command-line tool)
+   - library (reusable package/SDK)
+   - data_pipeline (ETL, data processing)
+   - ml_model (ML training/inference)
+
+8. **Keywords**: Extract 5-10 domain-specific keywords that describe what this project does.
+   Examples: "payments", "authentication", "real-time chat", "image processing", "api gateway"
+
+9. **Use Cases**: 2-4 specific things this project enables/solves.
+   Examples: "process credit card payments", "manage user sessions", "analyze customer data"
+
+IMPORTANT: Be balanced - report real issues you see, but verify from files.
+Most projects have 2-4 gaps and 1-3 risks. A truly polished project may have fewer.
+
+Respond with valid JSON matching this schema:
+{schema}
+
+Return ONLY the JSON, no markdown or explanation."""
 
 
 def _format_files_for_prompt(files: dict) -> str:
@@ -62,39 +123,59 @@ def _format_files_for_prompt(files: dict) -> str:
     return "\n\n".join(parts)
 
 
+RESPONSE_SCHEMA = """{
+  "stack": {
+    "frontend": ["list of frontend techs"],
+    "backend": ["list of backend techs"],
+    "database": ["list of database techs"],
+    "infrastructure": ["list of infra techs"]
+  },
+  "gaps": ["list of missing best practices"],
+  "risk_flags": ["list of potential issues"],
+  "complexity_score": 1-10,
+  "recommendations_context": "summary string",
+  "industry": "one of: fintech, ecommerce, healthcare, devtools, saas, ai-ml, media, education, general",
+  "project_type": "one of: api, web_app, mobile, cli, library, data_pipeline, ml_model",
+  "keywords": ["domain", "specific", "keywords"],
+  "use_cases": ["what the project does"]
+}"""
+
+
 @retry(
-    retry=retry_if_exception_type(RateLimitError),
+    retry=retry_if_exception_type(Exception),
     wait=wait_exponential(multiplier=1, min=1, max=60),
-    stop=stop_after_attempt(5),
+    stop=stop_after_attempt(3),
 )
 def analyze_repo(repo_files: dict) -> RepoFingerprint:
-    """Analyze repository files and return structured fingerprint.
-
-    Args:
-        repo_files: Dict from github.fetch_repo_files() with keys:
-            - owner: str
-            - repo: str
-            - files: dict[str, str|dict]
-            - languages: dict[str, int]
-
-    Returns:
-        RepoFingerprint with stack analysis, gaps, risks, and recommendations
-    """
+    """Analyze repository files and return structured fingerprint."""
     files = repo_files.get("files", {})
     languages = repo_files.get("languages", {})
 
     prompt = ANALYSIS_PROMPT.format(
         files_content=_format_files_for_prompt(files),
         languages=json.dumps(languages, indent=2),
+        schema=RESPONSE_SCHEMA,
     )
 
-    response = _get_client().beta.chat.completions.parse(
-        model="gpt-4o",
+    client = _get_client()
+    model = os.getenv("LITELLM_MODEL", "gpt-4o")
+
+    response = client.chat.completions.create(
+        model=model,
         messages=[
-            {"role": "system", "content": "You are a senior software architect analyzing repositories."},
+            {"role": "system", "content": "You are a senior software architect analyzing repositories. Always respond with valid JSON only."},
             {"role": "user", "content": prompt},
         ],
-        response_format=RepoFingerprint,
+        temperature=0.1,
     )
 
-    return response.choices[0].message.parsed
+    result_text = response.choices[0].message.content
+    # Strip markdown code blocks if present
+    if result_text.startswith("```"):
+        result_text = result_text.split("```")[1]
+        if result_text.startswith("json"):
+            result_text = result_text[4:]
+    result_text = result_text.strip()
+
+    result = json.loads(result_text)
+    return RepoFingerprint(**result)

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Seed tools from JSON into Supabase with OpenAI embeddings.
+Seed tools from JSON into Supabase with embeddings.
 
 Usage:
     python scripts/seed_tools.py
 
 Requires:
-    SUPABASE_URL, SUPABASE_KEY, OPENAI_API_KEY in environment
+    SUPABASE_URL, SUPABASE_KEY, and LITELLM_API_KEY (or OPENAI_API_KEY)
 """
 
 import json
@@ -21,10 +21,14 @@ load_dotenv()
 # Check required env vars
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+LITELLM_BASE_URL = os.getenv("LITELLM_BASE_URL")
+LITELLM_API_KEY = os.getenv("LITELLM_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-if not all([SUPABASE_URL, SUPABASE_KEY, OPENAI_API_KEY]):
-    print("Error: Missing required env vars (SUPABASE_URL, SUPABASE_KEY, OPENAI_API_KEY)")
+API_KEY = LITELLM_API_KEY or OPENAI_API_KEY
+
+if not all([SUPABASE_URL, SUPABASE_KEY, API_KEY]):
+    print("Error: Missing required env vars (SUPABASE_URL, SUPABASE_KEY, LITELLM_API_KEY or OPENAI_API_KEY)")
     sys.exit(1)
 
 try:
@@ -36,10 +40,14 @@ except ImportError:
 
 # Init clients
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
+if LITELLM_BASE_URL:
+    openai_client = OpenAI(base_url=LITELLM_BASE_URL, api_key=API_KEY)
+else:
+    openai_client = OpenAI(api_key=API_KEY)
 
 EMBEDDING_MODEL = "text-embedding-3-small"
-BATCH_SIZE = 20  # OpenAI batch limit
+BATCH_SIZE = 20
 
 
 def load_tools_json() -> list[dict]:

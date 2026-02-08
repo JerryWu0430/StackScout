@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -13,7 +14,8 @@ class AnalyzeRequest(BaseModel):
 
 
 class AnalyzeResponse(BaseModel):
-    repo_id: int
+    repo_id: str
+    github_url: Optional[str] = None
     fingerprint: RepoFingerprint
 
 
@@ -43,11 +45,11 @@ async def analyze_repository(req: AnalyzeRequest):
     )
 
     repo_id = result.data[0]["id"]
-    return AnalyzeResponse(repo_id=repo_id, fingerprint=fingerprint)
+    return AnalyzeResponse(repo_id=repo_id, github_url=req.github_url, fingerprint=fingerprint)
 
 
 @router.get("/{repo_id}", response_model=AnalyzeResponse)
-async def get_repo(repo_id: int):
+async def get_repo(repo_id: str):
     """Get saved repo fingerprint by ID."""
     result = supabase.table("repos").select("*").eq("id", repo_id).execute()
 
@@ -59,4 +61,4 @@ async def get_repo(repo_id: int):
         raise HTTPException(status_code=404, detail="Fingerprint not found")
 
     fingerprint = RepoFingerprint.model_validate_json(repo["fingerprint"])
-    return AnalyzeResponse(repo_id=repo["id"], fingerprint=fingerprint)
+    return AnalyzeResponse(repo_id=repo["id"], github_url=repo.get("github_url"), fingerprint=fingerprint)
