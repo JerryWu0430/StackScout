@@ -1,25 +1,25 @@
-import { Link } from 'react-router-dom'
-
-interface Tool {
-  id: number
-  name: string
-  category: string
-  description?: string
-  tags: string[]
-}
+import { ExternalLink, Mail } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { GlowingEffect } from '@/components/ui/glowing-effect'
+import type { Tool, MatchReason } from '@/types/api'
 
 interface ToolCardProps {
   tool: Tool
   suitabilityScore: number
   demoPriority: number
   explanation: string
-  repoId: string
+  matchReasons?: MatchReason[]
+  onBookDemo?: () => void
+  onDraftEmail?: () => void
+  isDraftingEmail?: boolean
 }
 
 function getScoreColor(score: number): string {
-  if (score >= 80) return 'bg-green-500'
-  if (score >= 60) return 'bg-yellow-500'
-  return 'bg-orange-500'
+  if (score >= 80) return 'bg-success'
+  if (score >= 60) return 'bg-warning'
+  return 'bg-destructive'
 }
 
 function getPriorityLabel(priority: number): string {
@@ -29,9 +29,46 @@ function getPriorityLabel(priority: number): string {
 }
 
 function getPriorityColor(priority: number): string {
-  if (priority <= 2) return 'bg-red-100 text-red-700'
-  if (priority <= 3) return 'bg-yellow-100 text-yellow-700'
-  return 'bg-gray-100 text-gray-600'
+  if (priority <= 2) return 'bg-destructive-muted text-destructive'
+  if (priority <= 3) return 'bg-warning-muted text-warning-foreground'
+  return 'bg-muted text-muted-foreground'
+}
+
+function getReasonIcon(type: string): string {
+  switch (type) {
+    case 'industry': return '🏢'
+    case 'keyword': return '🔑'
+    case 'gap': return '🎯'
+    case 'use_case': return '💡'
+    default: return '✓'
+  }
+}
+
+function getReasonLabel(type: string): string {
+  switch (type) {
+    case 'industry': return 'Industry fit'
+    case 'keyword': return 'Keyword match'
+    case 'gap': return 'Addresses gap'
+    case 'use_case': return 'Use case match'
+    default: return 'Match'
+  }
+}
+
+function getSourceLabel(source: string | null | undefined): { label: string; color: string } | null {
+  switch (source) {
+    case 'product_hunt':
+      return { label: 'Product Hunt', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' }
+    case 'yc':
+      return { label: 'Y Combinator', color: 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-400' }
+    case 'github':
+      return { label: 'GitHub', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' }
+    default:
+      return null
+  }
+}
+
+function formatUrl(url: string): string {
+  return url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
 }
 
 export default function ToolCard({
@@ -39,46 +76,107 @@ export default function ToolCard({
   suitabilityScore,
   demoPriority,
   explanation,
-  repoId,
+  matchReasons = [],
+  onBookDemo,
+  onDraftEmail,
+  isDraftingEmail = false,
 }: ToolCardProps) {
+  const sourceInfo = getSourceLabel(tool.source)
+
   return (
-    <div className="bg-white p-5 rounded-lg shadow-md">
-      <div className="flex justify-between items-start mb-3">
+    <Card className="relative">
+      <GlowingEffect glow />
+      <CardContent className="space-y-4">
+        <div className="flex justify-between items-start">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-lg font-semibold text-card-foreground">{tool.name}</h3>
+              {sourceInfo && (
+                <span className={`text-xs px-2 py-0.5 rounded ${sourceInfo.color}`}>
+                  {sourceInfo.label}
+                </span>
+              )}
+            </div>
+            <p className="text-muted-foreground text-sm mt-1">{tool.description}</p>
+            {tool.url && (
+              <a
+                href={tool.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-1"
+              >
+                <ExternalLink className="size-3" />
+                {formatUrl(tool.url)}
+              </a>
+            )}
+          </div>
+          <div className="flex gap-2 flex-shrink-0 ml-4">
+            <span className={`text-xs px-2 py-1 rounded font-medium ${getPriorityColor(demoPriority)}`}>
+              {getPriorityLabel(demoPriority)}
+            </span>
+            <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded">
+              {tool.category}
+            </span>
+          </div>
+        </div>
+
         <div>
-          <h3 className="text-lg font-semibold text-gray-800">{tool.name}</h3>
-          <p className="text-gray-600 text-sm">{tool.description}</p>
+          <div className="flex justify-between text-sm mb-1">
+            <span className="text-muted-foreground">Suitability Score</span>
+            <span className="font-medium text-card-foreground">{Math.round(suitabilityScore)}%</span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-2">
+            <div
+              className={`h-2 rounded-full ${getScoreColor(suitabilityScore)}`}
+              style={{ width: `${suitabilityScore}%` }}
+            />
+          </div>
         </div>
+
+        {/* Match Reasons */}
+        {matchReasons.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {matchReasons.map((reason, idx) => (
+              <Badge
+                key={idx}
+                variant="outline"
+                className="text-xs font-normal"
+                title={`+${reason.score_contribution.toFixed(1)} points`}
+              >
+                <span className="mr-1">{getReasonIcon(reason.type)}</span>
+                <span className="text-muted-foreground mr-1">{getReasonLabel(reason.type)}:</span>
+                <span className="font-medium">{reason.matched}</span>
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        <p className="text-muted-foreground text-sm italic">{explanation}</p>
+
         <div className="flex gap-2">
-          <span className={`text-xs px-2 py-1 rounded font-medium ${getPriorityColor(demoPriority)}`}>
-            {getPriorityLabel(demoPriority)}
-          </span>
-          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-            {tool.category}
-          </span>
+          {onDraftEmail && (
+            <Button onClick={onDraftEmail} size="sm" disabled={isDraftingEmail}>
+              <Mail className="size-3.5 mr-1" />
+              {isDraftingEmail ? 'Creating...' : 'Draft Email'}
+            </Button>
+          )}
+          <Button onClick={onBookDemo} size="sm" variant="outline">
+            Book Demo
+          </Button>
+          {tool.url && (
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+            >
+              <a href={tool.url} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="size-3.5 mr-1" />
+                Website
+              </a>
+            </Button>
+          )}
         </div>
-      </div>
-
-      <div className="mb-3">
-        <div className="flex justify-between text-sm mb-1">
-          <span className="text-gray-600">Suitability Score</span>
-          <span className="font-medium text-gray-800">{Math.round(suitabilityScore)}%</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className={`h-2 rounded-full ${getScoreColor(suitabilityScore)}`}
-            style={{ width: `${suitabilityScore}%` }}
-          />
-        </div>
-      </div>
-
-      <p className="text-gray-600 text-sm mb-4 italic">{explanation}</p>
-
-      <Link
-        to={`/schedule/${repoId}/${tool.id}`}
-        className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-      >
-        Schedule Demo
-      </Link>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

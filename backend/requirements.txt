@@ -8,4 +8,8 @@ supabase>=2.0.0
 httpx
 google-api-python-client
 google-auth
+google-genai>=1.0.0
 elevenlabs
+twilio>=8.0.0
+apscheduler>=3.10.0
+resend>=0.7.0

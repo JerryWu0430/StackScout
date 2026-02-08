@@ -1,17 +1,20 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
-import Analysis from './pages/Analysis'
-import Tools from './pages/Tools'
-import Schedule from './pages/Schedule'
+import AnalysisPage from './pages/AnalysisPage'
+import BookingForm from './pages/BookingForm'
+import CallStatus from './pages/CallStatus'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Main routes */}
         <Route path="/" element={<Home />} />
-        <Route path="/analysis/:repo_id" element={<Analysis />} />
-        <Route path="/tools" element={<Tools />} />
-        <Route path="/schedule/:repo_id/:tool_id" element={<Schedule />} />
+        <Route path="/analysis/:repo_id" element={<AnalysisPage />} />
+
+        {/* CallPilot routes */}
+        <Route path="/book" element={<BookingForm />} />
+        <Route path="/calling/:requestId" element={<CallStatus />} />
       </Routes>
     </BrowserRouter>
   )

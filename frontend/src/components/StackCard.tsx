@@ -1,36 +1,56 @@
+import { Monitor, Server, Database, Cloud, Package } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { GlowingEffect } from '@/components/ui/glowing-effect'
+
 interface StackCardProps {
   category: string
   technologies: string[]
 }
 
-const CATEGORY_ICONS: Record<string, string> = {
-  frontend: '🖥️',
-  backend: '⚙️',
-  database: '🗄️',
-  infrastructure: '☁️',
+const CATEGORY_CONFIG: Record<string, { icon: typeof Monitor; bg: string }> = {
+  frontend: { icon: Monitor, bg: 'bg-info-muted' },
+  backend: { icon: Server, bg: 'bg-success-muted' },
+  database: { icon: Database, bg: 'bg-warning-muted' },
+  infrastructure: { icon: Cloud, bg: 'bg-primary/10' },
 }
 
+const DEFAULT_CONFIG = { icon: Package, bg: 'bg-muted' }
+
 export default function StackCard({ category, technologies }: StackCardProps) {
-  const icon = CATEGORY_ICONS[category.toLowerCase()] || '📦'
+  const config = CATEGORY_CONFIG[category.toLowerCase()] || DEFAULT_CONFIG
+  const Icon = config.icon
 
   return (
-    <div className="bg-white p-5 rounded-lg shadow-md">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-xl">{icon}</span>
-        <h3 className="text-lg font-semibold text-gray-800 capitalize">{category}</h3>
-      </div>
-      {technologies.length > 0 ? (
-        <ul className="space-y-1">
-          {technologies.map((tech) => (
-            <li key={tech} className="text-gray-600 text-sm flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-              {tech}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-gray-400 text-sm italic">None detected</p>
-      )}
-    </div>
+    <Card className="relative p-0">
+      <GlowingEffect glow />
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <div className={`p-1 rounded ${config.bg}`}>
+              <Icon className="size-3.5 text-foreground/70" />
+            </div>
+            <h3 className="text-sm font-semibold text-card-foreground capitalize">{category}</h3>
+          </div>
+          {technologies.length > 0 && (
+            <Badge variant="secondary" className="text-xs">{technologies.length}</Badge>
+          )}
+        </div>
+        {technologies.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {technologies.map((tech) => (
+              <span
+                key={tech}
+                className="px-2 py-0.5 text-xs bg-muted text-muted-foreground rounded border border-border"
+              >
+                {tech}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-xs italic">None detected</p>
+        )}
+      </CardContent>
+    </Card>
   )
 }

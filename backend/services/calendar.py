@@ -104,6 +104,70 @@ def get_available_slots(days_ahead: int = 7, slot_duration_minutes: int = 30) ->
     return available
 
 
+def get_optimal_demo_slots(
+    tool_count: int,
+    days_ahead: int = 7,
+    slot_duration_minutes: int = 30,
+    buffer_minutes: int = 15,
+    max_per_day: int = 3,
+) -> list[TimeSlot]:
+    """
+    Get optimal demo slots for multiple demos.
+
+    Groups demos by day and adds buffers between them.
+    Returns slots spread across available days.
+
+    Args:
+        tool_count: Number of demos to schedule
+        days_ahead: Days to look ahead
+        slot_duration_minutes: Duration of each demo
+        buffer_minutes: Buffer between demos
+        max_per_day: Maximum demos per day
+    """
+    all_slots = get_available_slots(days_ahead, slot_duration_minutes)
+
+    if not all_slots:
+        return []
+
+    # Group slots by day
+    slots_by_day: dict[str, list[TimeSlot]] = {}
+    for slot in all_slots:
+        day_key = slot.start.strftime("%Y-%m-%d")
+        if day_key not in slots_by_day:
+            slots_by_day[day_key] = []
+        slots_by_day[day_key].append(slot)
+
+    # Select optimal slots - spread across days with buffers
+    selected: list[TimeSlot] = []
+    days = sorted(slots_by_day.keys())
+
+    for day in days:
+        if len(selected) >= tool_count:
+            break
+
+        day_slots = slots_by_day[day]
+        day_selected = 0
+        last_end: Optional[datetime] = None
+
+        for slot in day_slots:
+            if day_selected >= max_per_day:
+                break
+            if len(selected) >= tool_count:
+                break
+
+            # Check buffer from previous slot
+            if last_end:
+                buffer_ok = slot.start >= last_end + timedelta(minutes=buffer_minutes)
+                if not buffer_ok:
+                    continue
+
+            selected.append(slot)
+            last_end = slot.end
+            day_selected += 1
+
+    return selected
+
+
 def create_demo_event(
     tool_name: str,
     slot: TimeSlot,
