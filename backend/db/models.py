@@ -32,3 +32,25 @@ class Demo(BaseModel):
     tool_id: str
     scheduled_at: Optional[datetime] = None
     status: str = "pending"
+
+
+class TimeSlot(BaseModel):
+    start: datetime
+    end: datetime
+    formatted: str
+
+
+class DraftEmail(BaseModel):
+    id: str
+    repo_id: str
+    tool_id: str
+    to_email: Optional[str] = None
+    to_name: Optional[str] = None
+    subject: str
+    body: str
+    context: dict = {}  # jsonb - tool info, fingerprint, match reasons
+    suggested_times: list[TimeSlot] = []
+    selected_time: Optional[TimeSlot] = None
+    status: str = "draft"  # draft|ready|sent|failed
+    created_at: Optional[datetime] = None
+    sent_at: Optional[datetime] = None

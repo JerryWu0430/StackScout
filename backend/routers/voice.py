@@ -1,8 +1,9 @@
 """Voice router for voice agent integration."""
 
+import json
 from datetime import datetime
-from typing import Optional
-from fastapi import APIRouter, HTTPException
+from typing import Optional, Any
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from db.supabase import supabase
@@ -11,6 +12,10 @@ from services import elevenlabs, calendar
 
 
 router = APIRouter(prefix="/api/voice", tags=["voice"])
+
+# In-memory session tracking (maps elevenlabs conversation_id -> repo_id)
+# For production, use Redis or DB table
+_session_repo_map: dict[str, str] = {}
 
 
 # Request/Response models
@@ -235,3 +240,245 @@ async def list_demos(repo_id: int):
         )
         for d in result.data
     ]
+
+
+# ============ ElevenLabs Webhook ============
+
+class LinkConversationRequest(BaseModel):
+    conversation_id: str
+    repo_id: str
+
+
+@router.post("/webhook/elevenlabs")
+async def elevenlabs_webhook(request: Request):
+    """
+    Receive conversation data from ElevenLabs webhook.
+
+    ElevenLabs sends POST with conversation transcript when call ends.
+    Configure webhook URL in ElevenLabs dashboard: {WEBHOOK_BASE_URL}/api/voice/webhook/elevenlabs
+    """
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    print(f"ElevenLabs webhook received: {json.dumps(payload, indent=2)[:500]}")
+
+    conversation_id = payload.get("conversation_id")
+    if not conversation_id:
+        return {"status": "ignored", "reason": "no conversation_id"}
+
+    # Extract transcript
+    transcript = payload.get("transcript", [])
+    transcript_text = []
+    for item in transcript:
+        speaker = item.get("role", item.get("speaker", "unknown"))
+        text = item.get("message", item.get("text", ""))
+        if text:
+            transcript_text.append({"speaker": speaker, "text": text})
+
+    # Extract any analysis/summary from payload
+    analysis = payload.get("analysis", {})
+
+    # Store in voice_conversations table (create if needed)
+    conversation_data = {
+        "conversation_id": conversation_id,
+        "transcript": transcript_text,
+        "analysis": analysis,
+        "raw_payload": payload,
+        "status": payload.get("status", "completed"),
+    }
+
+    # Try to store - table may not exist yet
+    try:
+        supabase.table("voice_conversations").upsert(
+            conversation_data,
+            on_conflict="conversation_id"
+        ).execute()
+    except Exception as e:
+        print(f"Failed to store conversation (table may not exist): {e}")
+        # Store in memory as fallback
+        _session_repo_map[f"conv_{conversation_id}"] = json.dumps(conversation_data)
+
+    return {"status": "received", "conversation_id": conversation_id}
+
+
+@router.post("/link-conversation")
+async def link_conversation(request: LinkConversationRequest):
+    """
+    Link a conversation to a repo (called by frontend after conversation ends).
+    Stores conversation context for use in email composition.
+    """
+    # Try to get from voice_conversations table
+    conversation_data = None
+    try:
+        result = supabase.table("voice_conversations").select("*").eq(
+            "conversation_id", request.conversation_id
+        ).single().execute()
+        if result.data:
+            conversation_data = result.data
+    except Exception:
+        pass
+
+    # Fallback: fetch from ElevenLabs API
+    if not conversation_data:
+        try:
+            summary = await elevenlabs.get_conversation_summary(request.conversation_id)
+            conversation_data = {
+                "conversation_id": request.conversation_id,
+                "transcript": [{"speaker": t.speaker, "text": t.text} for t in summary.transcript],
+                "status": summary.status,
+            }
+        except Exception as e:
+            print(f"Could not fetch conversation: {e}")
+
+    if not conversation_data:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    # Update repo with last conversation
+    try:
+        supabase.table("repos").update({
+            "last_conversation": conversation_data
+        }).eq("id", request.repo_id).execute()
+    except Exception as e:
+        print(f"Failed to update repo (column may not exist): {e}")
+        # Store mapping in memory
+        _session_repo_map[request.repo_id] = conversation_data
+
+    return {
+        "status": "linked",
+        "repo_id": request.repo_id,
+        "conversation_id": request.conversation_id,
+    }
+
+
+@router.get("/conversation/{repo_id}")
+async def get_repo_conversation(repo_id: str):
+    """Get the last conversation for a repo."""
+    # Try DB first
+    try:
+        result = supabase.table("repos").select("last_conversation").eq("id", repo_id).single().execute()
+        if result.data and result.data.get("last_conversation"):
+            return result.data["last_conversation"]
+    except Exception:
+        pass
+
+    # Fallback to memory
+    if repo_id in _session_repo_map:
+        data = _session_repo_map[repo_id]
+        if isinstance(data, str):
+            return json.loads(data)
+        return data
+
+    raise HTTPException(status_code=404, detail="No conversation found for repo")
+
+
+# ============ ElevenLabs Client Tools ============
+
+class GetEmailContextRequest(BaseModel):
+    repo_id: str
+    tool_id: Optional[str] = None
+
+
+class CaptureInterestRequest(BaseModel):
+    repo_id: str
+    interest: str
+    tool_name: Optional[str] = None
+
+
+@router.post("/tool/get-email-context")
+async def get_email_context(request: GetEmailContextRequest):
+    """
+    ElevenLabs client tool: Get context for email drafting discussion.
+    Returns repo fingerprint, recommended tools, and match reasons.
+    """
+    # Get repo
+    try:
+        repo_result = supabase.table("repos").select("*").eq("id", request.repo_id).single().execute()
+        if not repo_result.data:
+            return {"error": "Repo not found", "project": None}
+        repo = repo_result.data
+    except Exception as e:
+        print(f"get_email_context error: {e}")
+        return {"error": str(e), "project": None}
+    fingerprint = repo.get("fingerprint", {})
+    if isinstance(fingerprint, str):
+        try:
+            fingerprint = json.loads(fingerprint)
+        except Exception:
+            fingerprint = {}
+
+    # Get recommendations if tool_id specified
+    tool_info = None
+    match_reasons = []
+    if request.tool_id:
+        tool_result = supabase.table("tools").select("*").eq("id", request.tool_id).single().execute()
+        if tool_result.data:
+            tool_info = {
+                "name": tool_result.data.get("name"),
+                "category": tool_result.data.get("category"),
+                "description": tool_result.data.get("description"),
+            }
+
+    # Build context for agent
+    tech_stack = fingerprint.get("tech_stack", fingerprint.get("stack", {}))
+    stack_list = []
+    if isinstance(tech_stack, dict):
+        for category, techs in tech_stack.items():
+            if isinstance(techs, list):
+                stack_list.extend(techs)
+
+    return {
+        "project": {
+            "industry": fingerprint.get("industry", "software"),
+            "project_type": fingerprint.get("project_type", "application"),
+            "tech_stack": stack_list[:10],
+            "keywords": fingerprint.get("keywords", [])[:5],
+            "use_cases": fingerprint.get("use_cases", [])[:3],
+        },
+        "tool": tool_info,
+        "gaps": fingerprint.get("gaps", [])[:3],
+        "suggestions": "Ask the user what specific features they're interested in and what problems they want to solve.",
+    }
+
+
+@router.post("/tool/capture-interest")
+async def capture_interest(request: CaptureInterestRequest):
+    """
+    ElevenLabs client tool: Capture user's expressed interest during conversation.
+    Stores for later use in email composition.
+    """
+    try:
+        print(f"Captured interest for repo {request.repo_id}: {request.interest}")
+
+        # Store in memory (keyed by repo_id)
+        key = f"interests_{request.repo_id}"
+        existing = _session_repo_map.get(key, [])
+        if isinstance(existing, str):
+            existing = json.loads(existing)
+        if not isinstance(existing, list):
+            existing = []
+
+        existing.append({
+            "interest": request.interest,
+            "tool_name": request.tool_name,
+            "timestamp": datetime.utcnow().isoformat(),
+        })
+        _session_repo_map[key] = existing
+
+        # Also try to store in DB
+        try:
+            repo_result = supabase.table("repos").select("last_conversation").eq("id", request.repo_id).single().execute()
+            if repo_result.data:
+                conv = repo_result.data.get("last_conversation") or {}
+                if isinstance(conv, str):
+                    conv = json.loads(conv)
+                conv["captured_interests"] = existing
+                supabase.table("repos").update({"last_conversation": conv}).eq("id", request.repo_id).execute()
+        except Exception as e:
+            print(f"Could not persist interest to DB: {e}")
+
+        return {"status": "captured", "interest": request.interest}
+    except Exception as e:
+        print(f"capture_interest error: {e}")
+        return {"status": "error", "error": str(e)}

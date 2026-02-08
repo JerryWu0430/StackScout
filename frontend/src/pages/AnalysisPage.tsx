@@ -9,7 +9,9 @@ import StackCard from '../components/StackCard'
 import GapCard from '../components/GapCard'
 import ToolCard from '../components/ToolCard'
 import CallStatusTab from '../components/CallStatusTab'
+import BatchEmailPanel from '../components/BatchEmailPanel'
 import useAnalysisVoice from '../hooks/useAnalysisVoice'
+import { useEmailDrafts } from '../hooks/useEmailDrafts'
 import { Spinner } from '@/components/ui/spinner'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
@@ -67,8 +69,9 @@ const itemVariants = {
 
 export default function AnalysisPage() {
   const { repo_id } = useParams<{ repo_id: string }>()
-  const [activeTab, setActiveTab] = useState<'stack' | 'recommendations' | 'call'>('stack')
+  const [activeTab, setActiveTab] = useState<'stack' | 'recommendations' | 'drafts' | 'call'>('stack')
   const [bookingState, setBookingState] = useState<BookingState | null>(null)
+  const [draftingToolId, setDraftingToolId] = useState<string | null>(null)
 
   const { data: repoData, isLoading: repoLoading, error: repoError } = useQuery({
     queryKey: ['repo', repo_id],
@@ -85,6 +88,20 @@ export default function AnalysisPage() {
   })
 
   const { status, isSpeaking, messages, startCall, endCall } = useAnalysisVoice({ autoStart: false })
+
+  const { drafts, createDraft, isCreating } = useEmailDrafts(repo_id)
+
+  const handleDraftEmail = useCallback(async (tool: Tool) => {
+    setDraftingToolId(tool.id)
+    try {
+      await createDraft({ toolId: tool.id })
+      setActiveTab('drafts')
+    } catch (err) {
+      console.error('Failed to create draft:', err)
+    } finally {
+      setDraftingToolId(null)
+    }
+  }, [createDraft])
 
   const handleBookDemo = useCallback(async (tool: Tool) => {
     try {
@@ -121,6 +138,7 @@ export default function AnalysisPage() {
   const tabs = [
     { id: 'stack', label: 'Tech Stack' },
     { id: 'recommendations', label: 'Recommendations' },
+    { id: 'drafts', label: `Email Drafts${drafts.length ? ` (${drafts.length})` : ''}` },
     ...(bookingState ? [{ id: 'call', label: 'Call Status' }] : []),
   ]
 
@@ -311,10 +329,17 @@ export default function AnalysisPage() {
                       explanation={rec.explanation}
                       matchReasons={rec.match_reasons}
                       onBookDemo={() => handleBookDemo(rec.tool)}
+                      onDraftEmail={() => handleDraftEmail(rec.tool)}
+                      isDraftingEmail={draftingToolId === rec.tool.id || isCreating}
                     />
                   </motion.div>
                 ))}
               </motion.div>
+            )}
+
+            {/* Email Drafts Tab */}
+            {activeTab === 'drafts' && repo_id && (
+              <BatchEmailPanel repoId={repo_id} />
             )}
 
             {/* Call Status Tab */}

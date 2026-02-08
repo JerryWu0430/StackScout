@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
+import { Features1 } from '@/components/blocks/features-1'
+import FaultyTerminal from '@/components/FaultyTerminal'
+import asciiDarkImg from '@/assets/ascii-dark.png'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -39,16 +42,43 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-2xl text-center">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 relative overflow-hidden">
+      {/* FaultyTerminal Background */}
+      <div className="absolute inset-0 opacity-30">
+        <FaultyTerminal
+          scale={1}
+          digitSize={1.5}
+          scanlineIntensity={0.3}
+          glitchAmount={1}
+          flickerAmount={1}
+          noiseAmp={0.3}
+          chromaticAberration={0}
+          dither={0}
+          curvature={0.2}
+          tint="#ffffff"
+          mouseReact
+          mouseStrength={0.2}
+          brightness={1}
+        />
+      </div>
+      <div className="w-full max-w-2xl text-center relative z-10">
         {/* Logo/Brand */}
         <div className="mb-8">
-          <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
+          {/* Large ASCII art with soft, blurred corners */}
+          <div
+            className="w-full max-w-xl mx-auto aspect-[4/3] max-h-80 relative"
+            style={{
+              maskImage: 'radial-gradient(ellipse 65% 65% at 50% 50%, black 35%, transparent 65%)',
+              WebkitMaskImage: 'radial-gradient(ellipse 65% 65% at 50% 50%, black 35%, transparent 65%)',
+            }}
+          >
+            <img
+              src={asciiDarkImg}
+              alt=""
+              className="w-full h-full object-cover object-center opacity-80"
+            />
           </div>
-          <h1 className="text-5xl font-bold text-foreground mb-4">StackScout</h1>
+          <h1 className="text-5xl font-bold text-foreground mb-4 -mt-20 relative z-10">StackScout</h1>
           <p className="text-xl text-muted-foreground">
             AI-powered repository analysis with voice-guided insights
           </p>
@@ -81,23 +111,7 @@ export default function Home() {
         </form>
 
         {/* Features */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div className="p-6 bg-card border border-border rounded-xl">
-            <div className="text-2xl mb-3">1</div>
-            <h3 className="font-medium text-foreground mb-1">Paste GitHub URL</h3>
-            <p className="text-sm text-muted-foreground">Enter any public repo</p>
-          </div>
-          <div className="p-6 bg-card border border-border rounded-xl">
-            <div className="text-2xl mb-3">2</div>
-            <h3 className="font-medium text-foreground mb-1">Voice Analysis</h3>
-            <p className="text-sm text-muted-foreground">AI explains your stack</p>
-          </div>
-          <div className="p-6 bg-card border border-border rounded-xl">
-            <div className="text-2xl mb-3">3</div>
-            <h3 className="font-medium text-foreground mb-1">Get Recommendations</h3>
-            <p className="text-sm text-muted-foreground">Tools to fill gaps</p>
-          </div>
-        </div>
+        <Features1 />
       </div>
     </div>
   )

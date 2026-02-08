@@ -12,6 +12,7 @@ from routers.voice import router as voice_router, demos_router
 from routers.booking import router as booking_router
 from routers.twilio_webhooks import router as twilio_router
 from routers.discovery import router as discovery_router
+from routers.email_drafts import router as email_drafts_router
 
 
 @asynccontextmanager
@@ -50,6 +51,9 @@ app.include_router(twilio_router)
 
 # Discovery routes
 app.include_router(discovery_router)
+
+# Email drafts routes
+app.include_router(email_drafts_router)
 
 
 @app.get("/")

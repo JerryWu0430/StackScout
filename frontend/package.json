@@ -21,6 +21,7 @@
     "framer-motion": "^12.33.0",
     "lucide-react": "^0.563.0",
     "motion": "^12.33.0",
+    "ogl": "^1.0.11",
     "radix-ui": "^1.4.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

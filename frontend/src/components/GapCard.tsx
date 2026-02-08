@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Zap, AlertCircle, ShieldAlert } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { GlowingEffect } from '@/components/ui/glowing-effect'
 import {
   Tooltip,
   TooltipContent,
@@ -49,8 +50,9 @@ export default function GapCard({ description, severity = 'medium' }: GapCardPro
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
-            className={`p-2.5 rounded border border-l-2 ${config.border} ${config.bg} cursor-default`}
+            className={`relative p-2.5 rounded border border-l-2 ${config.border} ${config.bg} cursor-default`}
           >
+            <GlowingEffect glow />
             <div className="flex items-start gap-2">
               <Icon className="size-3.5 shrink-0 mt-0.5 text-foreground/70" />
               <div className="flex-1 min-w-0">
